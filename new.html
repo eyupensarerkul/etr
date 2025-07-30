@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lezzet Diyarı Restoranı</title>
+    <style>
+        /* Genel Stiller */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            width: 80%;
+            margin: auto;
+            overflow: hidden;
+            padding: 20px 0;
+        }
+
+        /* Başlık Alanı */
+        header {
+            background: #333;
+            color: #fff;
+            padding-top: 30px;
+            min-height: 70px;
+            border-bottom: #77aaff 3px solid;
+        }
+
+        header a {
+            color: #fff;
+            text-decoration: none;
+            text-transform: uppercase;
+            font-size: 16px;
+        }
+
+        header ul {
+            padding: 0;
+            list-style: none;
+        }
+
+        header li {
+            display: inline;
+            padding: 0 20px 0 20px;
+        }
+
+        header #branding {
+            float: left;
+        }
+
+        header #branding h1 {
+            margin: 0;
+        }
+
+        header nav {
+            float: right;
+            margin-top: 10px;
+        }
+
+        header .highlight, header .current a {
+            color: #77aaff;
+            font-weight: bold;
+        }
+
+        header a:hover {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        /* Ana Bölüm */
+        #showcase {
+            min-height: 400px;
+            background: url('https://via.placeholder.com/1500x400/333/fff?text=Harika+Yemekler') no-repeat 0 -400px; /* Arka plan resmi için bir placeholder */
+            text-align: center;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        #showcase h1 {
+            font-size: 55px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+        }
+
+        #showcase p {
+            font-size: 20px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+        }
+
+        /* İçerik Bölümleri */
+        .section {
+            padding: 40px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .section h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 36px;
+            color: #333;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .menu-item img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 50%;
+            margin-right: 20px;
+        }
+
+        .menu-item-details h3 {
+            margin: 0 0 5px 0;
+            color: #77aaff;
+        }
+
+        .menu-item-details p {
+            margin: 0;
+            font-size: 14px;
+        }
+
+        .menu-item-price {
+            margin-left: auto;
+            font-weight: bold;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .contact-info {
+            text-align: center;
+        }
+
+        .contact-info p {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .contact-info i {
+            margin-right: 10px;
+            color: #77aaff;
+        }
+
+        /* Alt Bilgi */
+        footer {
+            padding: 20px;
+            margin-top: 20px;
+            color: #fff;
+            background-color: #333;
+            text-align: center;
+        }
+
+        /* Duyarlı Tasarım */
+        @media(max-width: 768px){
+            header #branding,
+            header nav,
+            header nav li {
+                float: none;
+                text-align: center;
+                width: 100%;
+            }
+
+            header nav ul {
+                text-align: center;
+                padding-top: 10px;
+            }
+
+            header nav li {
+                display: block;
+                margin-bottom: 10px;
+            }
+
+            #showcase h1 {
+                font-size: 40px;
+            }
+
+            .menu-item {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .menu-item img {
+                margin: 0 0 15px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div id="branding">
+                <h1><span class="highlight">Lezzet</span> Diyarı</h1>
+            </div>
+            <nav>
+                <ul>
+                    <li class="current"><a href="#anasayfa">Ana Sayfa</a></li>
+                    <li><a href="#menu">Menü</a></li>
+                    <li><a href="#iletisim">İletişim</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section id="showcase">
+        <h1>Damak Tadınıza Dokunan Lezzetler</h1>
+        <p>En taze malzemelerle hazırlanan eşsiz yemekler...</p>
+    </section>
+
+    <div class="container">
+        <section id="anasayfa" class="section">
+            <h2>Hoş Geldiniz</h2>
+            <p style="text-align: center; font-size: 18px;">
+                Lezzet Diyarı'nda, sizlere unutulmaz bir yemek deneyimi sunmak için buradayız. Şeflerimizin özenle hazırladığı menümüzle, her damak zevkine uygun lezzetler keşfedeceksiniz. Sıcak atmosferimiz ve güler yüzlü ekibimizle, sizleri ağırlamaktan mutluluk duyarız.
+            </p>
+            <p style="text-align: center; font-size: 16px; margin-top: 20px;">
+                Taze ve yerel malzemelerle hazırlanan yemeklerimizle sağlıklı ve lezzetli bir seçki sunuyoruz. İş toplantılarınız, özel günleriniz veya sadece keyifli bir akşam yemeği için ideal bir mekanız.
+            </p>
+        </section>
+
+        <section id="menu" class="section">
+            <h2>Menümüz</h2>
+            <div class="menu-item">
+                <img src="https://via.placeholder.com/100x100?text=Izgara+Levrek" alt="Izgara Levrek">
+                <div class="menu-item-details">
+                    <h3>Izgara Levrek</h3>
+                    <p>Taze mevsim balığı, Akdeniz yeşillikleri ve özel sos ile.</p>
+                </div>
+                <span class="menu-item-price">₺180</span>
+            </div>
+            <div class="menu-item">
+                <img src="https://via.placeholder.com/100x100?text=Dana+Antrikot" alt="Dana Antrikot">
+                <div class="menu-item-details">
+                    <h3>Dana Antrikot</h3>
+                    <p>Özel marine edilmiş dana antrikot, patates püresi ve mevsim sebzeleri.</p>
+                </div>
+                <span class="menu-item-price">₺250</span>
+            </div>
+            <div class="menu-item">
+                <img src="https://via.placeholder.com/100x100?text=Fettuccine+Alfredo" alt="Fettuccine Alfredo">
+                <div class="menu-item-details">
+                    <h3>Fettuccine Alfredo</h3>
+                    <p>Kremalı mantar soslu ev yapımı fettuccine.</p>
+                </div>
+                <span class="menu-item-price">₺120</span>
+            </div>
+            <div class="menu-item">
+                <img src="https://via.placeholder.com/100x100?text=Mevsim+Salatası" alt="Mevsim Salatası">
+                <div class="menu-item-details">
+                    <h3>Mevsim Salata</h3>
+                    <p>Taze mevsim yeşillikleri, çeri domates ve nar ekşili sos.</p>
+                </div>
+                <span class="menu-item-price">₺75</span>
+            </div>
+             <div class="menu-item">
+                <img src="https://via.placeholder.com/100x100?text=Sufle" alt="Sufle">
+                <div class="menu-item-details">
+                    <h3>Sufle</h3>
+                    <p>Sıcak çikolatalı sufle, vanilyalı dondurma ile servis edilir.</p>
+                </div>
+                <span class="menu-item-price">₺90</span>
+            </div>
+        </section>
+
+        <section id="iletisim" class="section">
+            <h2>Bize Ulaşın</h2>
+            <div class="contact-info">
+                <p><i class="fas fa-map-marker-alt"></i> Adres: Örnek Cad. No: 123, Lezzet Mahallesi, Şehir</p>
+                <p><i class="fas fa-phone-alt"></i> Telefon: +90 5XX XXX XX XX</p>
+                <p><i class="fas fa-envelope"></i> E-posta: info@lezzetdiyari.com</p>
+                <p>Çalışma Saatleri: Her Gün 12:00 - 23:00</p>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <p>Lezzet Diyarı Restoranı &copy; 2025</p>
+    </footer>
+
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</body>
+</html>
