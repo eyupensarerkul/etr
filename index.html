@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eyüp Ensar Erkul'un Lezzet Diyarı</title>
+    <title>Lezzet Diyarı Restoranı</title>
     <style>
         /* Genel Stiller */
         body {
@@ -94,38 +94,6 @@
             text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
         }
 
-        /* Kişisel Bölüm Stili */
-        #personal-section {
-            padding: 40px 0;
-            text-align: center;
-            background-color: #e2e2e2;
-            border-bottom: 1px solid #ddd;
-        }
-        #personal-section h1 {
-            color: #333;
-            font-size: 40px;
-            margin-bottom: 10px;
-        }
-        #personal-section p {
-            font-size: 22px;
-            color: #555;
-        }
-        #personal-section a {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 10px 20px;
-            background-color: #77aaff;
-            color: #fff;
-            text-decoration: none;
-            border-radius: 5px;
-            font-size: 18px;
-            transition: background-color 0.3s ease;
-        }
-        #personal-section a:hover {
-            background-color: #5588cc;
-        }
-
-
         /* İçerik Bölümleri (Restoran) */
         .section {
             padding: 40px 0;
@@ -134,4 +102,207 @@
 
         .section h2 {
             text-align: center;
-            margin-bottom
+            margin-bottom: 30px;
+            font-size: 36px;
+            color: #333;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .menu-item img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 50%;
+            margin-right: 20px;
+        }
+
+        .menu-item-details h3 {
+            margin: 0 0 5px 0;
+            color: #77aaff;
+        }
+
+        .menu-item-details p {
+            margin: 0;
+            font-size: 14px;
+        }
+
+        .menu-item-price {
+            margin-left: auto;
+            font-weight: bold;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .contact-info {
+            text-align: center;
+        }
+
+        .contact-info p {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .contact-info i {
+            margin-right: 10px;
+            color: #77aaff;
+        }
+
+        /* Alt Bilgi */
+        footer {
+            padding: 20px;
+            margin-top: 20px;
+            color: #fff;
+            background-color: #333;
+            text-align: center;
+        }
+
+        /* Duyarlı Tasarım */
+        @media(max-width: 768px){
+            header #branding,
+            header nav,
+            header nav li {
+                float: none;
+                text-align: center;
+                width: 100%;
+            }
+
+            header nav ul {
+                text-align: center;
+                padding-top: 10px;
+            }
+
+            header nav li {
+                display: block;
+                margin-bottom: 10px;
+            }
+
+            #showcase h1 {
+                font-size: 40px;
+            }
+
+            .menu-item {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .menu-item img {
+                margin: 0 0 15px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div id="branding">
+                <h1><span class="highlight">Lezzet</span> Diyarı</h1>
+            </div>
+            <nav>
+                <ul>
+                    <li class="current"><a href="#anasayfa">Ana Sayfa</a></li>
+                    <li><a href="#menu">Menü</a></li>
+                    <li><a href="#iletisim">İletişim</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section id="showcase">
+        <h1>Damak Tadınıza Dokunan Lezzetler</h1>
+        <p>En taze malzemelerle hazırlanan eşsiz yemekler...</p>
+    </section>
+
+    <div class="container">
+        <section id="anasayfa" class="section">
+            <h2>Hoş Geldiniz</h2>
+            <p style="text-align: center; font-size: 18px;">
+                Lezzet Diyarı'nda, sizlere unutulmaz bir yemek deneyimi sunmak için buradayız. Şeflerimizin özenle hazırladığı menümüzle, her damak zevkine uygun lezzetler keşfedeceksiniz. Sıcak atmosferimiz ve güler yüzlü ekibimizle, sizleri ağırlamaktan mutluluk duyarız.
+            </p>
+            <p style="text-align: center; font-size: 16px; margin-top: 20px;">
+                Taze ve yerel malzemelerle hazırlanan yemeklerimizle sağlıklı ve lezzetli bir seçki sunuyoruz. İş toplantılarınız, özel günleriniz veya sadece keyifli bir akşam yemeği için ideal bir mekanız.
+            </p>
+        </section>
+
+        <section id="menu" class="section">
+            <h2>Menümüz</h2>
+            <div class="menu-item">
+                <img src="https://via.placeholder.com/100x100?text=Izgara+Levrek" alt="Izgara Levrek">
+                <div class="menu-item-details">
+                    <h3>Izgara Levrek</h3>
+                    <p>Taze mevsim balığı, Akdeniz yeşillikleri ve özel sos ile.</p>
+                </div>
+                <span class="menu-item-price">₺180</span>
+            </div>
+            <div class="menu-item">
+                <img src="https://via.placeholder.com/100x100?text=Dana+Antrikot" alt="Dana Antrikot">
+                <div class="menu-item-details">
+                    <h3>Dana Antrikot</h3>
+                    <p>Özel marine edilmiş dana antrikot, patates püresi ve mevsim sebzeleri.</p>
+                </div>
+                <span class="menu-item-price">₺250</span>
+            </div>
+            <div class="menu-item">
+                <img src="https://via.placeholder.com/100x100?text=Fettuccine+Alfredo" alt="Fettuccine Alfredo">
+                <div class="menu-item-details">
+                    <h3>Fettuccine Alfredo</h3>
+                    <p>Kremalı mantar soslu ev yapımı fettuccine.</p>
+                </div>
+                <span class="menu-item-price">₺120</span>
+            </div>
+            <div class="menu-item">
+                <img src="https://via.placeholder.com/100x100?text=Mevsim+Salatası" alt="Mevsim Salatası">
+                <div class="menu-item-details">
+                    <h3>Mevsim Salata</h3>
+                    <p>Taze mevsim yeşillikleri, çeri domates ve nar ekşili sos.</p>
+                </div>
+                <span class="menu-item-price">₺75</span>
+            </div>
+             <div class="menu-item">
+                <img src="https://via.placeholder.com/100x100?text=Sufle" alt="Sufle">
+                <div class="menu-item-details">
+                    <h3>Sufle</h3>
+                    <p>Sıcak çikolatalı sufle, vanilyalı dondurma ile servis edilir.</p>
+                </div>
+                <span class="menu-item-price">₺90</span>
+            </div>
+        </section>
+
+        <section id="iletisim" class="section">
+            <h2>Bize Ulaşın</h2>
+            <div class="contact-info">
+                <p><i class="fas fa-map-marker-alt"></i> Adres: Örnek Cad. No: 123, Lezzet Mahallesi, Şehir</p>
+                <p><i class="fas fa-phone-alt"></i> Telefon: +90 5XX XXX XX XX</p>
+                <p><i class="fas fa-envelope"></i> E-posta: info@lezzetdiyari.com</p>
+                <p>Çalışma Saatleri: Her Gün 12:00 - 23:00</p>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <p>Lezzet Diyarı Restoranı &copy; 2025</p>
+    </footer>
+
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
+    <script type="text/javascript">
+    var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+    (function(){
+    var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+    s1.async=true;
+    s1.src='https://embed.tawk.to/6887a6a57ed5b21929b44a76/1j1c0f2nl';
+    s1.charset='UTF-8';
+    s1.setAttribute('crossorigin','*');
+    s0.parentNode.insertBefore(s1,s0);
+    })();
+    </script>
+    </body>
+</html>
