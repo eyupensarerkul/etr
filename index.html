@@ -295,7 +295,7 @@
                     <div class="project-card">
                         <img src="https://via.placeholder.com/400x200/8e44ad/ffffff?text=Restorant+WebSitesi+2" alt="Restorant WebSitesi 2">
                         <div class="project-content">
-                            <h3>Restorant WebSitesi </h3>
+                            <h3>Basit Python Uygulaması</h3>
                             <p>Canva üzerinden Canvanın sınırlarını aşarak bir restoran sitesi yaptım sitede canlı sohbet gibi yenilikçi şeyler ekledim.</p>
                             <a href="#" target="_blank">Detayları Gör</a>
                         </div>
@@ -331,7 +331,7 @@
         <section id="game" style="text-align: center; padding: 40px 0; background-color: #f0f2f5;">
             <div class="container">
                 <h2>Araba Sollama Oyunu</h2>
-                <p>Klavyedeki sağ ve sol ok tuşlarıyla arabanı kontrol et. Diğer arabalara çarpmadan ilerle ve en yüksek puanı topla!</p>
+                <p>Oyunu başlatmak için tuvale tıkla veya dokun. Klavyedeki sağ ve sol ok tuşlarıyla veya ekranın sağına/soluna dokunarak arabanı kontrol et. Diğer arabalara çarpmadan ilerle ve en yüksek puanı topla!</p>
                 <canvas id="gameCanvas" width="300" height="500" style="background-color: #4a6566; border: 5px solid #2c3e50; border-radius: 10px;"></canvas>
                 <div style="margin-top: 15px; font-size: 1.2em; font-weight: bold;">
                     <p>Puan: <span id="score">0</span></p>
@@ -379,7 +379,7 @@
         let lastTime = 0;
         const accelerationRate = 0.0001; // Hızlanma oranı
 
-        // Oyun tuşlarını dinleme
+        // Klavyeden kontrol
         document.addEventListener('keydown', e => {
             if (isGameOver) return;
             if (e.key === 'ArrowRight') {
@@ -387,23 +387,45 @@
             } else if (e.key === 'ArrowLeft') {
                 playerCar.x -= playerCar.speed * 10;
             }
-            // Oyuncuyu tuvalin içinde tut
             playerCar.x = Math.max(0, Math.min(canvas.width - playerCar.width, playerCar.x));
         });
 
+        // Telefondan dokunma ile kontrol
+        canvas.addEventListener('touchstart', e => {
+            if (isGameOver) return;
+            const touchX = e.touches[0].clientX;
+            const canvasRect = canvas.getBoundingClientRect();
+            const relativeX = touchX - canvasRect.left;
+            
+            if (relativeX < canvas.width / 2) {
+                playerCar.x -= playerCar.speed * 10;
+            } else {
+                playerCar.x += playerCar.speed * 10;
+            }
+            playerCar.x = Math.max(0, Math.min(canvas.width - playerCar.width, playerCar.x));
+        });
+
+        // Oyunu tam ekrana geçirme
+        function goFullscreen() {
+            if (canvas.requestFullscreen) {
+                canvas.requestFullscreen();
+            } else if (canvas.mozRequestFullScreen) {
+                canvas.mozRequestFullScreen();
+            } else if (canvas.webkitRequestFullscreen) {
+                canvas.webkitRequestFullscreen();
+            } else if (canvas.msRequestFullscreen) {
+                canvas.msRequestFullscreen();
+            }
+        }
+        canvas.addEventListener('click', goFullscreen);
+        canvas.addEventListener('touchstart', goFullscreen);
+        
         // Oyunu çizen ana fonksiyon
         function draw() {
-            // Tuvali temizle
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Yol şeritlerini çiz
             drawRoadLines();
-
-            // Oyuncu arabasını çiz
             ctx.fillStyle = playerColor;
             ctx.fillRect(playerCar.x, playerCar.y, playerCar.width, playerCar.height);
-
-            // Diğer arabaları çiz
             otherCars.forEach(car => {
                 ctx.fillStyle = car.color;
                 ctx.fillRect(car.x, car.y, car.width, car.height);
@@ -412,10 +434,8 @@
 
         // Yol şeritlerini çizen fonksiyon
         function drawRoadLines() {
-            ctx.fillStyle = '#ecf0f1'; // Açık gri
-            // Sol şerit
+            ctx.fillStyle = '#ecf0f1';
             ctx.fillRect(canvas.width / 3 - 5, 0, 5, canvas.height);
-            // Sağ şerit
             ctx.fillRect(2 * canvas.width / 3, 0, 5, canvas.height);
         }
 
@@ -426,36 +446,27 @@
             const deltaTime = timestamp - lastTime;
             lastTime = timestamp;
 
-            // Oyun hızını zamanla artır
             carSpeed += accelerationRate * deltaTime;
-            carSpawnInterval = Math.max(500, carSpawnInterval - accelerationRate * 100 * deltaTime); // Minimum 500ms
+            carSpawnInterval = Math.max(500, carSpawnInterval - accelerationRate * 100 * deltaTime);
 
-            // Yeni araba oluştur
             if (timestamp - lastSpawnTime > carSpawnInterval) {
                 spawnCar();
                 lastSpawnTime = timestamp;
             }
 
-            // Arabaları hareket ettir
             updateCars();
-
-            // Çarpışma kontrolü yap
             checkCollisions();
-
-            // Çizimi güncelle
             draw();
 
-            // Puanı güncelle
             document.getElementById('score').innerText = Math.floor(score);
-            score += 0.1; // Puanı sürekli artır
+            score += 0.1;
 
-            // Bir sonraki kare için tekrar çağır
             requestAnimationFrame(gameLoop);
         }
 
         // Yeni bir araba oluşturan fonksiyon
         function spawnCar() {
-            const lane = Math.floor(Math.random() * 3); // 0, 1 veya 2. 3 şerit için
+            const lane = Math.floor(Math.random() * 3);
             const xPos = lane * (canvas.width / 3) + (canvas.width / 6 - 15);
             const color = otherCarColors[Math.floor(Math.random() * otherCarColors.length)];
             
@@ -464,7 +475,7 @@
                 height: 60,
                 x: xPos,
                 y: -60,
-                speed: carSpeed + (Math.random() * 2), // Rastgele hız farkı ekle
+                speed: carSpeed + (Math.random() * 2),
                 color: color
             });
         }
@@ -474,10 +485,9 @@
             for (let i = 0; i < otherCars.length; i++) {
                 otherCars[i].y += otherCars[i].speed;
 
-                // Ekrandan çıkan arabaları diziden kaldır
                 if (otherCars[i].y > canvas.height) {
                     otherCars.splice(i, 1);
-                    i--; // Diziden eleman silindiği için indeksi ayarla
+                    i--;
                 }
             }
         }
@@ -485,14 +495,12 @@
         // Çarpışma kontrolünü yapan fonksiyon
         function checkCollisions() {
             otherCars.forEach(car => {
-                // Basit bir dikdörtgen çarpışma kontrolü (AABB)
                 if (
                     playerCar.x < car.x + car.width &&
                     playerCar.x + playerCar.width > car.x &&
                     playerCar.y < car.y + car.height &&
                     playerCar.y + playerCar.height > car.y
                 ) {
-                    // Çarpışma oldu!
                     isGameOver = true;
                     document.getElementById('gameOverText').style.display = 'block';
                 }
