@@ -257,12 +257,13 @@
             bottom: 20px;
             width: 100%;
             display: flex;
-            justify-content: space-between;
+            justify-content: center; /* Ortaya hizalamak için değiştirildi */
             align-items: flex-end;
             pointer-events: none; /* Tuval üzerindeki tıklamaların game-controls'u değil, tuvali etkilemesini sağlar */
             z-index: 10;
             padding: 0 10px;
             box-sizing: border-box;
+            gap: 20%; /* Tuş grupları arasına daha fazla boşluk koymak için */
         }
 
         .game-controls .control-group {
@@ -274,15 +275,15 @@
         .game-controls .move-controls {
             display: flex;
             flex-direction: row; /* Sol ve Sağ tuşları yan yana */
-            justify-content: flex-start; /* Sola yaslı */
+            justify-content: center; /* Sola yaslı */
             gap: 10px;
         }
         
         .game-controls .speed-controls {
             display: flex;
             flex-direction: column;
-            justify-content: flex-end; /* Sağa yaslı */
-            align-items: flex-end;
+            justify-content: center; /* Sağa yaslı */
+            align-items: center;
             gap: 10px;
         }
 
@@ -306,12 +307,17 @@
             background-color: rgba(26, 188, 156, 0.9); /* Basıldığında renk değiştir */
             transform: scale(0.95);
         }
-
-        #fullscreen-button {
+        
+        .top-controls {
             position: absolute;
             top: 20px;
             right: 20px;
+            display: flex;
+            gap: 10px;
             z-index: 10;
+        }
+
+        .top-controls button {
             background-color: rgba(44, 62, 80, 0.7);
             color: #fff;
             border: 2px solid #fff;
@@ -322,7 +328,7 @@
             transition: background-color 0.3s ease;
         }
 
-        #fullscreen-button:hover {
+        .top-controls button:hover {
             background-color: rgba(26, 188, 156, 0.9);
         }
 
@@ -386,8 +392,7 @@
 
                     <div class="project-card">
                         <img src="https://via.placeholder.com/400x200/d35400/ffffff?text=Oyun+Geliştirme+3" alt="Oyun Geliştirme 3">
-                        <div class=
-"project-content">
+                        <div class="project-content">
                             <h3>Scratch ile Oyun</h3>
                             <p>Scratch platformunda basit bir interaktif oyun tasarladım. Karakter animasyonları ve puanlama sistemi ekledim.</p>
                             <a href="#" target="_blank">Detayları Gör</a>
@@ -427,7 +432,10 @@
                             <button class="control-button" id="brake-button"><i class="fas fa-caret-down"></i></button>
                         </div>
                     </div>
-                    <button id="fullscreen-button">Tam Ekran</button>
+                    <div class="top-controls">
+                      <button id="pause-button">Duraklat</button>
+                      <button id="fullscreen-button">Tam Ekran</button>
+                    </div>
                 </div>
                 <div style="margin-top: 15px; font-size: 1.2em; font-weight: bold;">
                     <p>Puan: <span id="score-3d">0</span></p>
@@ -452,6 +460,7 @@
         const scoreElement = document.getElementById('score-3d');
         const gameOverText = document.getElementById('gameOverText-3d');
         const fullscreenButton = document.getElementById('fullscreen-button');
+        const pauseButton = document.getElementById('pause-button');
         
         // Ekrana eklenen kontrol tuşlarını seçiyoruz
         const leftButton = document.getElementById('left-button');
@@ -459,19 +468,18 @@
         const gasButton = document.getElementById('gas-button');
         const brakeButton = document.getElementById('brake-button');
 
-        let scene, camera, renderer, playerCar, road, gameRunning = false, score = 0;
+        let scene, camera, renderer, playerCar, road, gameRunning = false, score = 0, isPaused = false;
         const otherCars = [];
+        const environmentObjects = [];
         
         let playerSpeed = 0.1;
         let targetSpeed = 0.1;
         
-        // Akıcı hareket için yeni değişkenler
-        let lateralVelocity = 0; // Yatay hız
-        const lateralAcceleration = 0.005; // Yatay hızlanma
-        const lateralDeceleration = 0.02; // Yatay yavaşlama
-        const maxLateralSpeed = 0.05; // Maksimum yatay hız
+        let lateralVelocity = 0;
+        const lateralAcceleration = 0.005;
+        const lateralDeceleration = 0.02;
+        const maxLateralSpeed = 0.05;
 
-        // 4 şeritli yol için yol genişliğini ayarlıyoruz
         const roadWidth = 4.2;
         const playerXMin = -(roadWidth / 2) + 0.5;
         const playerXMax = (roadWidth / 2) - 0.5;
@@ -481,13 +489,21 @@
 
         const loader = new GLTFLoader();
 
+        // GENİŞ AÇILI KAMERA İÇİN DEĞİŞTİRİLEN DEĞERLER
+        // Oyun için FOV'u 90'a çıkardık
+        const defaultCameraFov = 90;
+        // Kamerayı daha geriye ve yukarıya çektik
+        const defaultCameraPosition = new THREE.Vector3(0, 3, 7);
+        // Duraklatma anı için daha da geniş ve geride bir açı belirledik
+        const pauseCameraFov = 110;
+        const pauseCameraPosition = new THREE.Vector3(0, 5, 10);
+        
         function init() {
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x87ceeb);
 
-            camera = new THREE.PerspectiveCamera(75, gameContainer.clientWidth / gameContainer.clientHeight, 0.1, 1000);
-            camera.position.z = 5;
-            camera.position.y = 2;
+            camera = new THREE.PerspectiveCamera(defaultCameraFov, gameContainer.clientWidth / gameContainer.clientHeight, 0.1, 1000);
+            camera.position.copy(defaultCameraPosition);
             camera.rotation.x = -Math.PI / 8;
 
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -496,17 +512,14 @@
             directionalLight.position.set(0, 10, 5);
             scene.add(directionalLight);
 
-            // Yol geometrisini 4 şerit için genişletiyoruz
             const roadGeometry = new THREE.BoxGeometry(roadWidth, 0.1, 1000);
             const roadMaterial = new THREE.MeshLambertMaterial({ color: 0x4a6566 });
             road = new THREE.Mesh(roadGeometry, roadMaterial);
             road.position.z = -500;
             scene.add(road);
 
-            // Yol şeritleri oluşturma (4 şerit için ayarlandı)
             const roadLines = [];
             for (let i = -500; i < 500; i += 2) {
-                // Şerit çizgileri için iki dikey çizgi kullanıyoruz
                 const lineGeometry = new THREE.BoxGeometry(0.1, 0.1, 1);
                 const lineMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
                 
@@ -521,11 +534,10 @@
                 roadLines.push(line2);
             }
             window.roadLines = roadLines;
-
+            
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(gameContainer.clientWidth, gameContainer.clientHeight);
             renderer.setPixelRatio(window.devicePixelRatio);
-            // Hata burada oluşuyordu, bu satır oyun ekranını HTML'e ekler.
             gameContainer.appendChild(renderer.domElement);
 
             loadModels();
@@ -536,7 +548,6 @@
             window.addEventListener('resize', onResize);
             gameContainer.addEventListener('click', startGame);
 
-            // Ekran üstü kontrol tuşları için olay dinleyicileri
             leftButton.addEventListener('touchstart', (e) => { e.preventDefault(); onButtonPress('left'); });
             rightButton.addEventListener('touchstart', (e) => { e.preventDefault(); onButtonPress('right'); });
             gasButton.addEventListener('touchstart', (e) => { e.preventDefault(); onButtonPress('gas'); });
@@ -547,7 +558,6 @@
             gasButton.addEventListener('touchend', (e) => { e.preventDefault(); onButtonRelease('gas'); });
             brakeButton.addEventListener('touchend', (e) => { e.preventDefault(); onButtonRelease('brake'); });
             
-            // Ekran üstü kontrol tuşları için mouse olay dinleyicileri
             leftButton.addEventListener('mousedown', () => onButtonPress('left'));
             leftButton.addEventListener('mouseup', () => onButtonRelease('left'));
             leftButton.addEventListener('mouseout', () => onButtonRelease('left'));
@@ -561,8 +571,8 @@
             brakeButton.addEventListener('mouseup', () => onButtonRelease('brake'));
             brakeButton.addEventListener('mouseout', () => onButtonRelease('brake'));
 
-            // Tam ekran butonu için olay dinleyicisi
             fullscreenButton.addEventListener('click', toggleFullscreen);
+            pauseButton.addEventListener('click', togglePause);
         }
 
         function loadModels() {
@@ -576,6 +586,7 @@
 
                 obstacleCarModel = gltf.scene.clone(); 
                 spawnInitialCars();
+                spawnEnvironmentObjects();
                 animate();
             }, undefined, function(error) {
                 console.error(error);
@@ -586,8 +597,59 @@
                 
                 obstacleCarModel = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 1), new THREE.MeshLambertMaterial({ color: 0xe74c3c }));
                 spawnInitialCars();
+                spawnEnvironmentObjects();
                 animate();
             });
+        }
+
+        function createBillboardTexture(text) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 256;
+            const context = canvas.getContext('2d');
+            context.fillStyle = '#2c3e50';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            context.font = 'bold 48px Arial';
+            context.fillStyle = '#1abc9c';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText(text, canvas.width / 2, canvas.height / 2);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function spawnEnvironmentObjects() {
+            // Ağaçları yerleştir
+            const treeGeometry = new THREE.CylinderGeometry(0.2, 0.2, 2, 8);
+            const treeMaterial = new THREE.MeshLambertMaterial({ color: 0x8b4513 });
+            const leafGeometry = new THREE.ConeGeometry(1, 2, 8);
+            const leafMaterial = new THREE.MeshLambertMaterial({ color: 0x228b22 });
+
+            for (let i = 0; i < 50; i++) {
+                const trunk = new THREE.Mesh(treeGeometry, treeMaterial);
+                const leaves = new THREE.Mesh(leafGeometry, leafMaterial);
+                leaves.position.y = 1.5;
+                const tree = new THREE.Group();
+                tree.add(trunk);
+                tree.add(leaves);
+
+                const zPosition = -Math.random() * 800 - 20;
+                const xPosition = (Math.random() > 0.5 ? 1 : -1) * (roadWidth / 2 + 1 + Math.random() * 5);
+                tree.position.set(xPosition, 0.5, zPosition);
+                scene.add(tree);
+                environmentObjects.push(tree);
+            }
+
+            // Reklam panosunu yerleştir
+            const billboardGeometry = new THREE.BoxGeometry(4, 2, 0.2);
+            const billboardTexture = createBillboardTexture('Eyvallah Turkish Restaurant');
+            const billboardMaterial = new THREE.MeshBasicMaterial({ map: billboardTexture });
+            const billboardMesh = new THREE.Mesh(billboardGeometry, billboardMaterial);
+            
+            const zPosition = -Math.random() * 800 - 20;
+            const xPosition = (Math.random() > 0.5 ? 1 : -1) * (roadWidth / 2 + 3);
+            billboardMesh.position.set(xPosition, 2, zPosition);
+            scene.add(billboardMesh);
+            environmentObjects.push(billboardMesh);
         }
 
         function startGame() {
@@ -597,11 +659,20 @@
             playerSpeed = 0.1;
             targetSpeed = 0.1;
             gameOverText.style.display = 'none';
+            pauseButton.innerText = 'Duraklat';
+            isPaused = false;
             
             otherCars.forEach(car => {
                 const lane = Math.floor(Math.random() * 4) - 1.5; // 4 şerit için rastgele konum
                 const zPosition = -Math.random() * 200 - 20;
                 car.position.set(lane, 0.25, zPosition);
+            });
+
+            environmentObjects.forEach(obj => {
+                const zPosition = -Math.random() * 800 - 20;
+                const xPosition = (Math.random() > 0.5 ? 1 : -1) * (roadWidth / 2 + 1 + Math.random() * 5);
+                obj.position.z = zPosition;
+                obj.position.x = xPosition;
             });
             
             animate();
@@ -624,14 +695,35 @@
                 otherCars.push(car);
             }
         }
+        
+        function togglePause() {
+            if (!gameRunning) return;
+            isPaused = !isPaused;
+            if (isPaused) {
+                pauseButton.innerText = 'Devam Et';
+                camera.fov = pauseCameraFov;
+                camera.position.copy(pauseCameraPosition);
+                camera.updateProjectionMatrix();
+            } else {
+                pauseButton.innerText = 'Duraklat';
+                camera.fov = defaultCameraFov;
+                camera.position.copy(defaultCameraPosition);
+                camera.updateProjectionMatrix();
+                animate();
+            }
+        }
 
-        // Tuş basma olayları için
         function onKeyDown(event) {
             if (!gameRunning) return;
+            if (event.key === 'p' || event.key === 'P') {
+                togglePause();
+            }
+            if (isPaused) return;
+
             if (event.key === 'ArrowLeft') {
-                lateralVelocity = -maxLateralSpeed; // Sola doğru yatay hızlan
+                lateralVelocity = -maxLateralSpeed; 
             } else if (event.key === 'ArrowRight') {
-                lateralVelocity = maxLateralSpeed; // Sağa doğru yatay hızlan
+                lateralVelocity = maxLateralSpeed;
             } else if (event.key === 'ArrowUp') {
                 targetSpeed = 0.2;
             } else if (event.key === 'ArrowDown') {
@@ -640,17 +732,16 @@
         }
 
         function onKeyUp(event) {
-            if (!gameRunning) return;
+            if (!gameRunning || isPaused) return;
             if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-                lateralVelocity = 0; // Tuş bırakılınca yatay hızı sıfırla
+                lateralVelocity = 0;
             } else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
                 targetSpeed = 0.1;
             }
         }
         
-        // Ekrana eklenen tuşlar için kontrol fonksiyonları
         function onButtonPress(direction) {
-            if (!gameRunning) return;
+            if (!gameRunning || isPaused) return;
             if (direction === 'left') {
                 lateralVelocity = -maxLateralSpeed;
             } else if (direction === 'right') {
@@ -663,7 +754,7 @@
         }
 
         function onButtonRelease(direction) {
-            if (!gameRunning) return;
+            if (!gameRunning || isPaused) return;
             if (direction === 'left' || direction === 'right') {
                 lateralVelocity = 0;
             } else if (direction === 'gas' || direction === 'brake') {
@@ -672,13 +763,11 @@
         }
 
         function update() {
-            if (!gameRunning) return;
+            if (!gameRunning || isPaused) return;
             
             playerSpeed += (targetSpeed - playerSpeed) * 0.05;
 
-            // Yatay hızı kullanarak arabanın x pozisyonunu güncelle
             playerCar.position.x += lateralVelocity;
-            // Yolun dışına çıkmasını engelle
             playerCar.position.x = Math.max(playerXMin, Math.min(playerXMax, playerCar.position.x));
 
             const moveDistance = playerSpeed;
@@ -699,6 +788,16 @@
                     const lane = Math.floor(Math.random() * 4) - 1.5;
                     const zPosition = -Math.random() * 200 - 20;
                     car.position.set(lane, 0.25, zPosition);
+                }
+            });
+            
+            environmentObjects.forEach(obj => {
+                obj.position.z += moveDistance;
+                if (obj.position.z > camera.position.z + 10) {
+                    const zPosition = -Math.random() * 800 - 20;
+                    const xPosition = (Math.random() > 0.5 ? 1 : -1) * (roadWidth / 2 + 1 + Math.random() * 5);
+                    obj.position.z = zPosition;
+                    obj.position.x = xPosition;
                 }
             });
 
@@ -725,7 +824,6 @@
             renderer.setSize(gameContainer.clientWidth, gameContainer.clientHeight);
         }
         
-        // Tam ekran moduna geçme/çıkma fonksiyonu
         function toggleFullscreen() {
             if (!document.fullscreenElement) {
                 gameContainer.requestFullscreen().catch(err => {
@@ -737,7 +835,7 @@
         }
 
         function animate() {
-            if (gameRunning) {
+            if (gameRunning && !isPaused) {
                 requestAnimationFrame(animate);
                 update();
                 renderer.render(scene, camera);
