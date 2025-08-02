@@ -338,6 +338,100 @@
                 display: flex;
             }
         }
+
+        /* CS2 Oyunu için özel stil */
+        #cs2-game-container {
+            width: 100%;
+            height: 500px;
+            max-width: 800px;
+            margin: 0 auto;
+            border: 5px solid #2c3e50;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        #cs2-game-info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        #mobile-controls {
+            display: none; /* Varsayılan olarak gizli */
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            z-index: 10;
+        }
+        #mobile-controls .control-column {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        #mobile-controls .move-pad {
+            display: grid;
+            grid-template-areas: ". up ." "left . right" ". down .";
+            width: 150px;
+            height: 150px;
+        }
+        #mobile-controls .move-pad button {
+            width: 50px;
+            height: 50px;
+            background-color: rgba(44, 62, 80, 0.7);
+            color: #fff;
+            border: 2px solid #fff;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+        }
+        #mobile-controls .move-pad .up { grid-area: up; }
+        #mobile-controls .move-pad .down { grid-area: down; }
+        #mobile-controls .move-pad .left { grid-area: left; }
+        #mobile-controls .move-pad .right { grid-area: right; }
+
+        #mobile-controls .action-pad {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 15px;
+        }
+        #mobile-controls .action-pad .fire-button {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background-color: rgba(231, 76, 60, 0.8);
+            border: 2px solid #fff;
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        #mobile-controls .action-pad .jump-button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: rgba(52, 152, 219, 0.8);
+            border: 2px solid #fff;
+            color: #fff;
+            font-size: 14px;
+        }
+        @media (max-width: 768px) {
+            #mobile-controls {
+                display: flex;
+            }
+        }
     </style>
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 </head>
@@ -351,7 +445,7 @@
                     <li><a href="#about">Hakkımda</a></li>
                     <li><a href="#projects">Projelerim</a></li>
                     <li><a href="#contact">İletişim</a></li>
-                    <li><a href="#game-3d">3D Oyun</a></li>
+                    <li><a href="#game-3d">3D Oyunlar</a></li>
                 </ul>
             </nav>
         </div>
@@ -421,7 +515,7 @@
             <div class="container">
                 <h2>3D Araba Sollama Oyunu</h2>
                 <p>Oynamak için tuvale tıkla veya aşağıdaki kontrol tuşlarını kullan.</p>
-                <div id="game-container" style="width: 100%; height: 500px; max-width: 800px; margin: 0 auto; border: 5px solid #2c3e50; border-radius: 10px; position: relative;">
+                <div id="game-container-car" style="width: 100%; height: 500px; max-width: 800px; margin: 0 auto; border: 5px solid #2c3e50; border-radius: 10px; position: relative;">
                     <div class="game-controls">
                         <div class="move-controls control-group">
                             <button class="control-button" id="left-button"><i class="fas fa-arrow-left"></i></button>
@@ -443,6 +537,48 @@
                 </div>
             </div>
         </section>
+
+        ---
+
+        <section id="cs2-game" style="text-align: center; padding: 40px 0; background-color: #e9ebee;">
+            <div class="container">
+                <h2>CS2 Benzeri Atış Oyunu</h2>
+                <p>Oynamak için oyuna tıkla veya aşağıdaki kontrol tuşlarını kullan.</p>
+                <div id="cs2-game-container">
+                    <div id="cs2-game-info" style="display: none;">
+                        <h3>Kontroller:</h3>
+                        <p>W, A, S, D: Hareket et</p>
+                        <p>Fare: Etrafa bak</p>
+                        <p>Fare sol tuşu: Ateş et</p>
+                        <p>Fareyi kilitlemek için ekrana tıkla.</p>
+                        <p>ESC: Kilidi aç</p>
+                        <p>Hedef: <span id="cs2-targets-left">0</span></p>
+                        <p>Puan: <span id="cs2-score">0</span></p>
+                    </div>
+
+                    <div id="mobile-controls">
+                        <div class="control-column">
+                            <div class="move-pad">
+                                <button class="up" id="cs2-up-button"><i class="fas fa-arrow-up"></i></button>
+                                <button class="left" id="cs2-left-button"><i class="fas fa-arrow-left"></i></button>
+                                <button class="right" id="cs2-right-button"><i class="fas fa-arrow-right"></i></button>
+                                <button class="down" id="cs2-down-button"><i class="fas fa-arrow-down"></i></button>
+                            </div>
+                        </div>
+                        <div class="control-column">
+                            <div class="action-pad">
+                                <button id="cs2-jump-button">Zıpla</button>
+                                <button id="cs2-fire-button">Ateş</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 15px; font-size: 1.2em; font-weight: bold;">
+                    <p id="cs2-game-status" style="color: green; display: none;">Oyun başladı! Tüm hedefleri vur.</p>
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <footer>
@@ -454,18 +590,19 @@
     <script type="module">
         import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.126.0/build/three.module.js';
 
-        const gameContainer = document.getElementById('game-container');
+        // ARABA OYUNU KODU BURADA
+        const gameContainerCar = document.getElementById('game-container-car');
         const scoreElement = document.getElementById('score-3d');
         const gameOverText = document.getElementById('gameOverText-3d');
         const fullscreenButton = document.getElementById('fullscreen-button');
         const pauseButton = document.getElementById('pause-button');
         
-        const leftButton = document.getElementById('left-button');
-        const rightButton = document.getElementById('right-button');
+        const leftButtonCar = document.getElementById('left-button');
+        const rightButtonCar = document.getElementById('right-button');
         const gasButton = document.getElementById('gas-button');
         const brakeButton = document.getElementById('brake-button');
 
-        let scene, camera, renderer, playerCar, gameRunning = false, score = 0, isPaused = false;
+        let sceneCar, cameraCar, rendererCar, playerCar, gameRunning = false, score = 0, isPaused = false;
         const otherCars = [];
         const environmentObjects = [];
         const roadChunks = [];
@@ -476,10 +613,9 @@
         const minSpeed = 0.08;
         
         let lateralVelocity = 0;
-        let lateralAcceleration = 0.005; // Başlangıç dönüş hızı
+        let lateralAcceleration = 0.005;
         const maxLateralAcceleration = 0.01;
-        const lateralDeceleration = 0.02;
-        let maxLateralSpeed = 0.05; // Başlangıç maksimum yan hız
+        let maxLateralSpeed = 0.05;
         const maxMaxLateralSpeed = 0.1;
 
         const roadWidth = 6.3;
@@ -489,107 +625,96 @@
         const spawnDistance = 50; 
         const despawnDistance = 10;
         
-        const roadChunkSize = 100; // Zemin parçasının uzunluğu
-        const roadLineCountPerChunk = 50;
+        const roadChunkSize = 100;
 
         const defaultCameraFov = 90;
-        const defaultCameraPosition = new THREE.Vector3(0, 3, 10); // Kamera daha geride
+        const defaultCameraPosition = new THREE.Vector3(0, 3, 10);
         const pauseCameraFov = 110;
         const pauseCameraPosition = new THREE.Vector3(0, 5, 12);
         
-        function init() {
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87ceeb);
+        function initCarGame() {
+            sceneCar = new THREE.Scene();
+            sceneCar.background = new THREE.Color(0x87ceeb);
 
-            camera = new THREE.PerspectiveCamera(defaultCameraFov, gameContainer.clientWidth / gameContainer.clientHeight, 0.1, 1000);
-            camera.position.copy(defaultCameraPosition);
-            camera.rotation.x = -Math.PI / 8;
+            cameraCar = new THREE.PerspectiveCamera(defaultCameraFov, gameContainerCar.clientWidth / gameContainerCar.clientHeight, 0.1, 1000);
+            cameraCar.position.copy(defaultCameraPosition);
+            cameraCar.rotation.x = -Math.PI / 8;
 
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-            scene.add(ambientLight);
+            sceneCar.add(ambientLight);
             const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
             directionalLight.position.set(0, 10, 5);
-            scene.add(directionalLight);
+            sceneCar.add(directionalLight);
 
             playerCar = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 1), new THREE.MeshLambertMaterial({ color: 0x27ae60 }));
             playerCar.position.set(0, 0.25, 4);
-            scene.add(playerCar);
+            sceneCar.add(playerCar);
 
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(gameContainer.clientWidth, gameContainer.clientHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            gameContainer.appendChild(renderer.domElement);
+            rendererCar = new THREE.WebGLRenderer({ antialias: true });
+            rendererCar.setSize(gameContainerCar.clientWidth, gameContainerCar.clientHeight);
+            rendererCar.setPixelRatio(window.devicePixelRatio);
+            gameContainerCar.appendChild(rendererCar.domElement);
             
             createInitialRoad();
             spawnInitialCars();
             spawnInitialEnvironmentObjects();
-            animate();
 
-            document.addEventListener('keydown', onKeyDown);
-            document.addEventListener('keyup', onKeyUp);
-            window.addEventListener('resize', onResize);
-            gameContainer.addEventListener('click', startGame);
+            document.addEventListener('keydown', onKeyDownCar);
+            document.addEventListener('keyup', onKeyUpCar);
+            window.addEventListener('resize', onResizeCar);
+            gameContainerCar.addEventListener('click', startGameCar);
 
-            leftButton.addEventListener('touchstart', (e) => { e.preventDefault(); onButtonPress('left'); });
-            rightButton.addEventListener('touchstart', (e) => { e.preventDefault(); onButtonPress('right'); });
-            gasButton.addEventListener('touchstart', (e) => { e.preventDefault(); onButtonPress('gas'); });
-            brakeButton.addEventListener('touchstart', (e) => { e.preventDefault(); onButtonPress('brake'); });
+            leftButtonCar.addEventListener('touchstart', (e) => { e.preventDefault(); onButtonPressCar('left'); });
+            rightButtonCar.addEventListener('touchstart', (e) => { e.preventDefault(); onButtonPressCar('right'); });
+            gasButton.addEventListener('touchstart', (e) => { e.preventDefault(); onButtonPressCar('gas'); });
+            brakeButton.addEventListener('touchstart', (e) => { e.preventDefault(); onButtonPressCar('brake'); });
 
-            leftButton.addEventListener('touchend', (e) => { e.preventDefault(); onButtonRelease('left'); });
-            rightButton.addEventListener('touchend', (e) => { e.preventDefault(); onButtonRelease('right'); });
-            gasButton.addEventListener('touchend', (e) => { e.preventDefault(); onButtonRelease('gas'); });
-            brakeButton.addEventListener('touchend', (e) => { e.preventDefault(); onButtonRelease('brake'); });
+            leftButtonCar.addEventListener('touchend', (e) => { e.preventDefault(); onButtonReleaseCar('left'); });
+            rightButtonCar.addEventListener('touchend', (e) => { e.preventDefault(); onButtonReleaseCar('right'); });
+            gasButton.addEventListener('touchend', (e) => { e.preventDefault(); onButtonReleaseCar('gas'); });
+            brakeButton.addEventListener('touchend', (e) => { e.preventDefault(); onButtonReleaseCar('brake'); });
             
-            leftButton.addEventListener('mousedown', () => onButtonPress('left'));
-            leftButton.addEventListener('mouseup', () => onButtonRelease('left'));
-            leftButton.addEventListener('mouseout', () => onButtonRelease('left'));
-            rightButton.addEventListener('mousedown', () => onButtonPress('right'));
-            rightButton.addEventListener('mouseup', () => onButtonRelease('right'));
-            rightButton.addEventListener('mouseout', () => onButtonRelease('right'));
-            gasButton.addEventListener('mousedown', () => onButtonPress('gas'));
-            gasButton.addEventListener('mouseup', () => onButtonRelease('gas'));
-            gasButton.addEventListener('mouseout', () => onButtonRelease('gas'));
-            brakeButton.addEventListener('mousedown', () => onButtonPress('brake'));
-            brakeButton.addEventListener('mouseup', () => onButtonRelease('brake'));
-            brakeButton.addEventListener('mouseout', () => onButtonRelease('brake'));
+            leftButtonCar.addEventListener('mousedown', () => onButtonPressCar('left'));
+            leftButtonCar.addEventListener('mouseup', () => onButtonReleaseCar('left'));
+            leftButtonCar.addEventListener('mouseout', () => onButtonReleaseCar('left'));
+            rightButtonCar.addEventListener('mousedown', () => onButtonPressCar('right'));
+            rightButtonCar.addEventListener('mouseup', () => onButtonReleaseCar('right'));
+            rightButtonCar.addEventListener('mouseout', () => onButtonReleaseCar('right'));
+            gasButton.addEventListener('mousedown', () => onButtonPressCar('gas'));
+            gasButton.addEventListener('mouseup', () => onButtonReleaseCar('gas'));
+            gasButton.addEventListener('mouseout', () => onButtonReleaseCar('gas'));
+            brakeButton.addEventListener('mousedown', () => onButtonPressCar('brake'));
+            brakeButton.addEventListener('mouseup', () => onButtonReleaseCar('brake'));
+            brakeButton.addEventListener('mouseout', () => onButtonReleaseCar('brake'));
 
-            fullscreenButton.addEventListener('click', toggleFullscreen);
-            pauseButton.addEventListener('click', togglePause);
+            fullscreenButton.addEventListener('click', toggleFullscreenCar);
+            pauseButton.addEventListener('click', togglePauseCar);
+            
+            animateCarGame();
         }
 
         function createRoadChunk(positionZ) {
             const chunk = new THREE.Group();
-
             const roadGeometry = new THREE.BoxGeometry(roadWidth, 0.1, roadChunkSize);
             const roadMaterial = new THREE.MeshLambertMaterial({ color: 0x4a6566 });
             const roadMesh = new THREE.Mesh(roadGeometry, roadMaterial);
             roadMesh.position.z = positionZ;
             chunk.add(roadMesh);
-
-            const roadLines = [];
+            const lineGeometry = new THREE.BoxGeometry(0.1, 0.1, 1);
+            const lineMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
             for (let i = positionZ - roadChunkSize / 2; i < positionZ + roadChunkSize / 2; i += 2) {
-                const lineGeometry = new THREE.BoxGeometry(0.1, 0.1, 1);
-                const lineMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
-                
                 const line1 = new THREE.Mesh(lineGeometry, lineMaterial);
                 line1.position.set(-2.1, 0.06, i);
                 chunk.add(line1);
-                roadLines.push(line1);
-                
                 const line2 = new THREE.Mesh(lineGeometry, lineMaterial);
                 line2.position.set(-0.7, 0.06, i);
                 chunk.add(line2);
-                roadLines.push(line2);
-
                 const line3 = new THREE.Mesh(lineGeometry, lineMaterial);
                 line3.position.set(0.7, 0.06, i);
                 chunk.add(line3);
-                roadLines.push(line3);
-
                 const line4 = new THREE.Mesh(lineGeometry, lineMaterial);
                 line4.position.set(2.1, 0.06, i);
                 chunk.add(line4);
-                roadLines.push(line4);
             }
             return chunk;
         }
@@ -597,7 +722,7 @@
         function createInitialRoad() {
             for(let i = -3; i < 3; i++) {
                 const chunk = createRoadChunk(i * roadChunkSize);
-                scene.add(chunk);
+                sceneCar.add(chunk);
                 roadChunks.push(chunk);
             }
         }
@@ -658,10 +783,10 @@
         function spawnNewCar() {
             const car = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 1), new THREE.MeshLambertMaterial({ color: Math.random() * 0xffffff }));
             const laneIndex = (Math.floor(Math.random() * 6) - 2.5) * 1.4;
-            const zPosition = camera.position.z - spawnDistance - Math.random() * 50;
+            const zPosition = cameraCar.position.z - spawnDistance - Math.random() * 50;
             car.position.set(laneIndex, 0.25, zPosition);
             car.speed = (Math.random() * 0.1) + 0.05; 
-            scene.add(car);
+            sceneCar.add(car);
             otherCars.push(car);
         }
         
@@ -680,12 +805,12 @@
                 obj = createTree();
                 obj.position.x = (Math.random() > 0.5 ? 1 : -1) * (roadWidth / 2 + 1 + Math.random() * 5);
             }
-            obj.position.z = camera.position.z - spawnDistance - Math.random() * 100;
-            scene.add(obj);
+            obj.position.z = cameraCar.position.z - spawnDistance - Math.random() * 100;
+            sceneCar.add(obj);
             environmentObjects.push(obj);
         }
 
-        function startGame() {
+        function startGameCar() {
             if (gameRunning) return;
             gameRunning = true;
             score = 0;
@@ -698,38 +823,38 @@
             isPaused = false;
             
             otherCars.forEach(car => {
-                car.position.z = camera.position.z - spawnDistance - Math.random() * 50;
+                car.position.z = cameraCar.position.z - spawnDistance - Math.random() * 50;
                 car.speed = (Math.random() * 0.1) + 0.05;
             });
 
             environmentObjects.forEach(obj => {
-                obj.position.z = camera.position.z - spawnDistance - Math.random() * 100;
+                obj.position.z = cameraCar.position.z - spawnDistance - Math.random() * 100;
             });
             
-            animate();
+            animateCarGame();
         }
         
-        function togglePause() {
+        function togglePauseCar() {
             if (!gameRunning) return;
             isPaused = !isPaused;
             if (isPaused) {
                 pauseButton.innerText = 'Devam Et';
-                camera.fov = pauseCameraFov;
-                camera.position.copy(pauseCameraPosition);
-                camera.updateProjectionMatrix();
+                cameraCar.fov = pauseCameraFov;
+                cameraCar.position.copy(pauseCameraPosition);
+                cameraCar.updateProjectionMatrix();
             } else {
                 pauseButton.innerText = 'Duraklat';
-                camera.fov = defaultCameraFov;
-                camera.position.copy(defaultCameraPosition);
-                camera.updateProjectionMatrix();
-                animate();
+                cameraCar.fov = defaultCameraFov;
+                cameraCar.position.copy(defaultCameraPosition);
+                cameraCar.updateProjectionMatrix();
+                animateCarGame();
             }
         }
 
-        function onKeyDown(event) {
+        function onKeyDownCar(event) {
             if (!gameRunning) return;
             if (event.key === 'p' || event.key === 'P') {
-                togglePause();
+                togglePauseCar();
             }
             if (isPaused) return;
 
@@ -744,7 +869,7 @@
             }
         }
 
-        function onKeyUp(event) {
+        function onKeyUpCar(event) {
             if (!gameRunning || isPaused) return;
             if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
                 lateralVelocity = 0;
@@ -753,7 +878,7 @@
             }
         }
         
-        function onButtonPress(direction) {
+        function onButtonPressCar(direction) {
             if (!gameRunning || isPaused) return;
             if (direction === 'left') {
                 lateralVelocity = -maxLateralSpeed;
@@ -766,7 +891,7 @@
             }
         }
 
-        function onButtonRelease(direction) {
+        function onButtonReleaseCar(direction) {
             if (!gameRunning || isPaused) return;
             if (direction === 'left' || direction === 'right') {
                 lateralVelocity = 0;
@@ -775,12 +900,11 @@
             }
         }
 
-        function update() {
+        function updateCarGame() {
             if (!gameRunning || isPaused) return;
             
             playerSpeed += (targetSpeed - playerSpeed) * 0.05;
             
-            // Dönüş hızı zamanla artsın
             lateralAcceleration = Math.min(lateralAcceleration + 0.000005, maxLateralAcceleration);
             maxLateralSpeed = Math.min(maxLateralSpeed + 0.000005, maxMaxLateralSpeed);
             
@@ -791,7 +915,7 @@
             
             roadChunks.forEach(chunk => {
                 chunk.position.z += moveDistance;
-                if(chunk.position.z > camera.position.z + despawnDistance + roadChunkSize / 2) {
+                if(chunk.position.z > cameraCar.position.z + despawnDistance + roadChunkSize / 2) {
                     chunk.position.z -= roadChunks.length * roadChunkSize;
                 }
             });
@@ -800,8 +924,8 @@
                 const relativeSpeed = moveDistance - car.speed;
                 car.position.z += relativeSpeed;
 
-                if (car.position.z > camera.position.z + despawnDistance) {
-                    scene.remove(car);
+                if (car.position.z > cameraCar.position.z + despawnDistance) {
+                    sceneCar.remove(car);
                     otherCars.splice(index, 1);
                     spawnNewCar();
                 }
@@ -809,8 +933,8 @@
             
             environmentObjects.forEach((obj, index) => {
                 obj.position.z += moveDistance;
-                if (obj.position.z > camera.position.z + despawnDistance) {
-                    scene.remove(obj);
+                if (obj.position.z > cameraCar.position.z + despawnDistance) {
+                    sceneCar.remove(obj);
                     environmentObjects.splice(index, 1);
                     spawnNewEnvironmentObject();
                 }
@@ -833,15 +957,15 @@
             });
         }
 
-        function onResize() {
-            camera.aspect = gameContainer.clientWidth / gameContainer.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(gameContainer.clientWidth, gameContainer.clientHeight);
+        function onResizeCar() {
+            cameraCar.aspect = gameContainerCar.clientWidth / gameContainerCar.clientHeight;
+            cameraCar.updateProjectionMatrix();
+            rendererCar.setSize(gameContainerCar.clientWidth, gameContainerCar.clientHeight);
         }
         
-        function toggleFullscreen() {
+        function toggleFullscreenCar() {
             if (!document.fullscreenElement) {
-                gameContainer.requestFullscreen().catch(err => {
+                gameContainerCar.requestFullscreen().catch(err => {
                     alert(`Tam ekran moduna geçilemedi: ${err.message}`);
                 });
             } else {
@@ -849,15 +973,255 @@
             }
         }
 
-        function animate() {
+        function animateCarGame() {
             if (gameRunning && !isPaused) {
-                requestAnimationFrame(animate);
-                update();
-                renderer.render(scene, camera);
+                requestAnimationFrame(animateCarGame);
+                updateCarGame();
+                rendererCar.render(sceneCar, cameraCar);
             }
         }
 
-        init();
+        initCarGame();
+        
+        // CS2 BENZERİ OYUN KODU BURADA
+        const gameContainerCS2 = document.getElementById('cs2-game-container');
+        const infoCS2 = document.getElementById('cs2-game-info');
+        const targetsLeftElement = document.getElementById('cs2-targets-left');
+        const scoreCS2Element = document.getElementById('cs2-score');
+        const gameStatusElement = document.getElementById('cs2-game-status');
+        
+        const cs2UpButton = document.getElementById('cs2-up-button');
+        const cs2DownButton = document.getElementById('cs2-down-button');
+        const cs2LeftButton = document.getElementById('cs2-left-button');
+        const cs2RightButton = document.getElementById('cs2-right-button');
+        const cs2FireButton = document.getElementById('cs2-fire-button');
+        const cs2JumpButton = document.getElementById('cs2-jump-button');
+
+        let sceneCS2, cameraCS2, rendererCS2;
+        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
+        let velocityCS2 = new THREE.Vector3();
+        let directionCS2 = new THREE.Vector3();
+        let canJump = false;
+        let targets = [];
+        let scoreCS2 = 0;
+        let targetCount = 10;
+        
+        const playerHeight = 1.8;
+        const playerSpeedCS2 = 0.05;
+
+        // Kontrol bayrakları
+        let isMovingUp = false;
+        let isMovingDown = false;
+        let isMovingLeft = false;
+        let isMovingRight = false;
+        let isFiring = false;
+        
+        function initCS2Game() {
+            sceneCS2 = new THREE.Scene();
+            sceneCS2.background = new THREE.Color(0x87ceeb);
+            sceneCS2.fog = new THREE.Fog(0x87ceeb, 0, 750);
+
+            cameraCS2 = new THREE.PerspectiveCamera(75, gameContainerCS2.clientWidth / gameContainerCS2.clientHeight, 0.1, 1000);
+            cameraCS2.position.y = playerHeight;
+            
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            sceneCS2.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 20, 10);
+            sceneCS2.add(directionalLight);
+
+            const groundGeometry = new THREE.PlaneGeometry(500, 500);
+            const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x808080 });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = -0.1;
+            sceneCS2.add(ground);
+            
+            rendererCS2 = new THREE.WebGLRenderer({ antialias: true });
+            rendererCS2.setSize(gameContainerCS2.clientWidth, gameContainerCS2.clientHeight);
+            rendererCS2.setPixelRatio(window.devicePixelRatio);
+            gameContainerCS2.appendChild(rendererCS2.domElement);
+
+            createWalls();
+            spawnTargets();
+
+            gameContainerCS2.addEventListener('mousedown', onMouseDownCS2, false);
+            gameContainerCS2.addEventListener('click', () => {
+                rendererCS2.domElement.requestPointerLock();
+                infoCS2.style.display = 'none';
+                gameStatusElement.innerText = "Oyun başladı! Tüm hedefleri vur.";
+                gameStatusElement.style.display = 'block';
+            });
+            document.addEventListener('mousemove', onMouseMoveCS2, false);
+            document.addEventListener('keydown', onKeyDownCS2, false);
+            document.addEventListener('keyup', onKeyUpCS2, false);
+            
+            // Mobil kontroller
+            cs2UpButton.addEventListener('touchstart', () => isMovingUp = true);
+            cs2UpButton.addEventListener('touchend', () => isMovingUp = false);
+            cs2DownButton.addEventListener('touchstart', () => isMovingDown = true);
+            cs2DownButton.addEventListener('touchend', () => isMovingDown = false);
+            cs2LeftButton.addEventListener('touchstart', () => isMovingLeft = true);
+            cs2LeftButton.addEventListener('touchend', () => isMovingLeft = false);
+            cs2RightButton.addEventListener('touchstart', () => isMovingRight = true);
+            cs2RightButton.addEventListener('touchend', () => isMovingRight = false);
+            cs2FireButton.addEventListener('touchstart', (e) => { e.preventDefault(); onFireCS2(); });
+            cs2JumpButton.addEventListener('touchstart', () => {
+                if(canJump) velocityCS2.y = 10;
+                canJump = false;
+            });
+            
+            window.addEventListener('resize', onResizeCS2);
+
+            animateCS2();
+        }
+        
+        function onResizeCS2() {
+            cameraCS2.aspect = gameContainerCS2.clientWidth / gameContainerCS2.clientHeight;
+            cameraCS2.updateProjectionMatrix();
+            rendererCS2.setSize(gameContainerCS2.clientWidth, gameContainerCS2.clientHeight);
+        }
+
+        function createWalls() {
+            const wallMaterial = new THREE.MeshLambertMaterial({ color: 0xcccccc });
+            const walls = [
+                new THREE.Mesh(new THREE.BoxGeometry(20, 5, 1), wallMaterial),
+                new THREE.Mesh(new THREE.BoxGeometry(1, 5, 20), wallMaterial),
+                new THREE.Mesh(new THREE.BoxGeometry(30, 5, 1), wallMaterial),
+                new THREE.Mesh(new THREE.BoxGeometry(1, 5, 15), wallMaterial)
+            ];
+            walls[0].position.set(0, 2.5, -20);
+            walls[1].position.set(15, 2.5, 0);
+            walls[2].position.set(-10, 2.5, 20);
+            walls[3].position.set(-20, 2.5, 0);
+
+            walls.forEach(wall => sceneCS2.add(wall));
+        }
+
+        function spawnTargets() {
+            targets.forEach(target => sceneCS2.remove(target));
+            targets = [];
+            for (let i = 0; i < targetCount; i++) {
+                const targetGeometry = new THREE.BoxGeometry(1, 1, 1);
+                const targetMaterial = new THREE.MeshLambertMaterial({ color: 0xe74c3c });
+                const targetMesh = new THREE.Mesh(targetGeometry, targetMaterial);
+                
+                const x = (Math.random() - 0.5) * 40;
+                const z = (Math.random() - 0.5) * 40;
+                const y = Math.random() * 3 + 1; // Yüksekliği rastgele yap
+                
+                targetMesh.position.set(x, y, z);
+                sceneCS2.add(targetMesh);
+                targets.push(targetMesh);
+            }
+            targetsLeftElement.innerText = targets.length;
+        }
+
+        function onKeyDownCS2(event) {
+            switch (event.code) {
+                case 'KeyW': moveForward = true; break;
+                case 'KeyA': moveLeft = true; break;
+                case 'KeyS': moveBackward = true; break;
+                case 'KeyD': moveRight = true; break;
+                case 'Space': 
+                    if (canJump) velocityCS2.y = 10;
+                    canJump = false;
+                    break;
+            }
+        }
+
+        function onKeyUpCS2(event) {
+            switch (event.code) {
+                case 'KeyW': moveForward = false; break;
+                case 'KeyA': moveLeft = false; break;
+                case 'KeyS': moveBackward = false; break;
+                case 'KeyD': moveRight = false; break;
+            }
+        }
+        
+        function onMouseMoveCS2(event) {
+            if (document.pointerLockElement === rendererCS2.domElement) {
+                const movementX = event.movementX || 0;
+                const movementY = event.movementY || 0;
+                
+                cameraCS2.rotation.y -= movementX * 0.002;
+                const newRotationX = cameraCS2.rotation.x - movementY * 0.002;
+                cameraCS2.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, newRotationX));
+            }
+        }
+
+        function onMouseDownCS2(event) {
+            if (document.pointerLockElement === rendererCS2.domElement) {
+                if (event.button === 0) { // Sol fare tuşu
+                    onFireCS2();
+                }
+            }
+        }
+        
+        function onFireCS2() {
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+            mouse.set(0, 0); // Ekranın tam ortası için
+            raycaster.setFromCamera(mouse, cameraCS2);
+            
+            const intersects = raycaster.intersectObjects(targets);
+
+            if (intersects.length > 0) {
+                const targetMesh = intersects[0].object;
+                sceneCS2.remove(targetMesh);
+                targets = targets.filter(t => t !== targetMesh);
+                
+                scoreCS2 += 100;
+                scoreCS2Element.innerText = scoreCS2;
+                targetsLeftElement.innerText = targets.length;
+                
+                if (targets.length === 0) {
+                    gameStatusElement.innerText = "Tebrikler! Tüm hedefleri vurdun. Yeni bir oyun için sayfayı yenile.";
+                    gameStatusElement.style.color = 'green';
+                }
+            }
+        }
+
+        function animateCS2() {
+            requestAnimationFrame(animateCS2);
+            
+            const delta = 0.016;
+
+            velocityCS2.y -= 9.8 * 2.0 * delta; // Yerçekimi
+            
+            directionCS2.z = (moveForward || isMovingUp) - (moveBackward || isMovingDown);
+            directionCS2.x = (moveRight || isMovingRight) - (moveLeft || isMovingLeft);
+
+            if (directionCS2.length() > 0) {
+                directionCS2.normalize();
+            }
+
+            velocityCS2.x = -directionCS2.x * playerSpeedCS2 * 60;
+            velocityCS2.z = -directionCS2.z * playerSpeedCS2 * 60;
+            
+            const forwardVector = new THREE.Vector3();
+            cameraCS2.getWorldDirection(forwardVector);
+            forwardVector.y = 0;
+            forwardVector.normalize();
+            
+            const rightVector = new THREE.Vector3();
+            rightVector.crossVectors(cameraCS2.up, forwardVector);
+            rightVector.normalize();
+            
+            cameraCS2.position.add(forwardVector.multiplyScalar(velocityCS2.z * delta));
+            cameraCS2.position.add(rightVector.multiplyScalar(velocityCS2.x * delta));
+            
+            if (cameraCS2.position.y <= playerHeight) {
+                velocityCS2.y = 0;
+                cameraCS2.position.y = playerHeight;
+                canJump = true;
+            }
+
+            rendererCS2.render(sceneCS2, cameraCS2);
+        }
+        
+        initCS2Game();
+
     </script>
 </body>
 </html>
