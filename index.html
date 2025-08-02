@@ -1045,6 +1045,8 @@
         let moveJoystickCenter = { x: 0, y: 0 };
         let moveJoystickPos = { x: 0, y: 0 };
         const moveJoystickRadius = 75;
+        let prevTouchX = 0;
+        let prevTouchY = 0;
 
         // Look Panel için değişkenler
         let lookTouchIdentifier = null;
@@ -1344,7 +1346,8 @@
 
             document.getElementById('cs2-joystick-knob').style.transform = `translate(-50%, -50%) translate(${dx}px, ${dy}px)`;
             
-            moveJoystickPos = { x: dx / moveJoystickRadius, y: dy / moveJoystickRadius };
+            // Joystick hareket yönlerini tersine çevirme
+            moveJoystickPos = { x: -dx / moveJoystickRadius, y: -dy / moveJoystickRadius };
         }
 
         function onMoveJoystickEnd(e) {
@@ -1358,6 +1361,8 @@
             e.preventDefault();
             const touch = e.changedTouches[0];
             lookTouchIdentifier = touch.identifier;
+            prevTouchX = touch.clientX;
+            prevTouchY = touch.clientY;
         }
 
         function onLookMove(e) {
@@ -1366,13 +1371,15 @@
             const touch = Array.from(e.changedTouches).find(t => t.identifier === lookTouchIdentifier);
             if (!touch) return;
             
-            const rect = lookPanel.getBoundingClientRect();
-            const dx = touch.clientX - (rect.left + rect.width / 2);
-            const dy = touch.clientY - (rect.top + rect.height / 2);
+            const dx = touch.clientX - prevTouchX;
+            const dy = touch.clientY - prevTouchY;
             
-            cameraCS2.rotation.y -= dx * lookSensitivity * 0.5;
-            const newRotationX = cameraCS2.rotation.x - dy * lookSensitivity * 0.5;
+            cameraCS2.rotation.y -= dx * lookSensitivity;
+            const newRotationX = cameraCS2.rotation.x - dy * lookSensitivity;
             cameraCS2.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, newRotationX));
+            
+            prevTouchX = touch.clientX;
+            prevTouchY = touch.clientY;
         }
         
         function onLookEnd(e) {
