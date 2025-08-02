@@ -433,6 +433,21 @@
             border-radius: 50%;
             font-size: 16px;
         }
+        
+        #cs2-look-panel {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 50%;
+            height: 100%;
+            pointer-events: auto;
+            z-index: 9;
+            /* Dokunma alanını görmek istersen buraya border veya background ekleyebilirsin:
+            background-color: rgba(0,255,0,0.1);
+            border: 2px dashed red;
+            */
+        }
+
 
         @media (max-width: 768px) {
             #cs2-game-container {
@@ -441,6 +456,18 @@
                 max-width: none;
                 margin: 0;
                 border-radius: 0;
+            }
+            #cs2-game-controls {
+                left: 10%;
+                transform: none;
+                width: 80%;
+                justify-content: space-between;
+                display: flex;
+            }
+            
+            #cs2-joystick-container {
+                display: block; /* Mobil cihazda göster */
+                margin-right: auto;
             }
         }
     </style>
@@ -576,6 +603,7 @@
                             <button id="cs2-fire-button" class="cs2-control-button">Ateş</button>
                         </div>
                     </div>
+                    <div id="cs2-look-panel"></div>
                 </div>
                 <div style="margin-top: 15px; font-size: 1.2em; font-weight: bold;">
                     <p id="cs2-game-status" style="color: green; display: none;">Oyun başladı! Tüm hedefleri vur.</p>
@@ -994,10 +1022,10 @@
         const gameStatusElement = document.getElementById('cs2-game-status');
 
         const cs2Controls = document.getElementById('cs2-game-controls');
-        const joystickContainer = document.getElementById('cs2-joystick-container');
-        const joystickKnob = document.getElementById('cs2-joystick-knob');
+        const moveJoystickContainer = document.getElementById('cs2-joystick-container');
         const fireButton = document.getElementById('cs2-fire-button');
         const jumpButton = document.getElementById('cs2-jump-button');
+        const lookPanel = document.getElementById('cs2-look-panel');
 
         let sceneCS2, cameraCS2, rendererCS2;
         let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
@@ -1005,6 +1033,7 @@
         let directionCS2 = new THREE.Vector3();
         let canJump = false;
         let targets = [];
+        let bullets = [];
         let scoreCS2 = 0;
         let targetCount = 10;
         
@@ -1012,10 +1041,14 @@
         const playerSpeedCS2 = 0.05;
 
         // Joystick için değişkenler
-        let joystickActive = false;
-        let joystickCenter = { x: 0, y: 0 };
-        let joystickPos = { x: 0, y: 0 };
-        const joystickRadius = 75;
+        let moveJoystickActive = false;
+        let moveJoystickCenter = { x: 0, y: 0 };
+        let moveJoystickPos = { x: 0, y: 0 };
+        const moveJoystickRadius = 75;
+
+        // Look Panel için değişkenler
+        let lookTouchIdentifier = null;
+        const lookSensitivity = 0.005;
 
         function initCS2Game() {
             sceneCS2 = new THREE.Scene();
@@ -1048,30 +1081,38 @@
 
             gameContainerCS2.addEventListener('mousedown', onMouseDownCS2, false);
             gameContainerCS2.addEventListener('click', () => {
-                if (document.pointerLockElement !== rendererCS2.domElement) {
-                    rendererCS2.domElement.requestPointerLock();
-                    infoCS2.style.display = 'none';
-                    gameStatusElement.innerText = "Oyun başladı! Tüm hedefleri vur.";
-                    gameStatusElement.style.display = 'block';
+                if (isMobileDevice()) {
+                    toggleFullscreenCS2();
+                } else {
+                    if (document.pointerLockElement !== rendererCS2.domElement) {
+                        rendererCS2.domElement.requestPointerLock();
+                        infoCS2.style.display = 'none';
+                        gameStatusElement.innerText = "Oyun başladı! Tüm hedefleri vur.";
+                        gameStatusElement.style.display = 'block';
+                    }
                 }
             });
-            document.addEventListener('mousemove', onMouseMoveCS2, false);
+
             document.addEventListener('keydown', onKeyDownCS2, false);
             document.addEventListener('keyup', onKeyUpCS2, false);
+            document.addEventListener('pointerlockchange', onPointerlockChange, false);
             
             // Mobil kontroller
             if (isMobileDevice()) {
                 infoCS2.style.display = 'none';
                 cs2Controls.style.display = 'flex';
-                gameContainerCS2.addEventListener('click', toggleFullscreenCS2, false);
+                lookPanel.addEventListener('touchstart', onLookStart, false);
+                lookPanel.addEventListener('touchmove', onLookMove, false);
+                lookPanel.addEventListener('touchend', onLookEnd, false);
             } else {
                 infoCS2.style.display = 'block';
                 cs2Controls.style.display = 'none';
+                lookPanel.style.display = 'none';
             }
 
-            joystickContainer.addEventListener('touchstart', onJoystickStart, false);
-            joystickContainer.addEventListener('touchmove', onJoystickMove, false);
-            joystickContainer.addEventListener('touchend', onJoystickEnd, false);
+            moveJoystickContainer.addEventListener('touchstart', onMoveJoystickStart, false);
+            moveJoystickContainer.addEventListener('touchmove', onMoveJoystickMove, false);
+            moveJoystickContainer.addEventListener('touchend', onMoveJoystickEnd, false);
             
             fireButton.addEventListener('touchstart', (e) => { e.preventDefault(); onFireCS2(); });
             jumpButton.addEventListener('touchstart', () => {
@@ -1087,6 +1128,19 @@
 
         function isMobileDevice() {
             return (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
+        }
+        
+        function onPointerlockChange() {
+            if (document.pointerLockElement === rendererCS2.domElement) {
+                document.addEventListener('mousemove', onMouseMoveCS2, false);
+                infoCS2.style.display = 'none';
+                gameStatusElement.innerText = "Oyun başladı! Tüm hedefleri vur.";
+                gameStatusElement.style.display = 'block';
+            } else {
+                document.removeEventListener('mousemove', onMouseMoveCS2, false);
+                infoCS2.style.display = 'block';
+                gameStatusElement.style.display = 'none';
+            }
         }
         
         function toggleFullscreenCS2() {
@@ -1105,7 +1159,6 @@
 
         function onOrientationChange() {
              if (window.orientation === 90 || window.orientation === -90) {
-                // Yatay ekran
                 if (isMobileDevice()) {
                     toggleFullscreenCS2();
                 }
@@ -1201,21 +1254,52 @@
         }
         
         function onFireCS2() {
-            const raycaster = new THREE.Raycaster();
-            const mouse = new THREE.Vector2();
-            mouse.set(0, 0);
-            raycaster.setFromCamera(mouse, cameraCS2);
-            
-            const intersects = raycaster.intersectObjects(targets);
+            const bulletGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+            const bulletMaterial = new THREE.MeshBasicMaterial({ color: 0xcccccc });
+            const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
 
-            if (intersects.length > 0) {
-                const targetMesh = intersects[0].object;
-                sceneCS2.remove(targetMesh);
-                targets = targets.filter(t => t !== targetMesh);
+            bullet.position.copy(cameraCS2.position);
+            const direction = new THREE.Vector3();
+            cameraCS2.getWorldDirection(direction);
+
+            bullet.velocity = direction.multiplyScalar(50);
+            sceneCS2.add(bullet);
+            bullets.push(bullet);
+        }
+        
+        function updateBullets() {
+            for(let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                bullet.position.add(bullet.velocity.clone().multiplyScalar(0.016));
                 
-                scoreCS2 += 100;
-                scoreCS2Element.innerText = scoreCS2;
-                targetsLeftElement.innerText = targets.length;
+                if (bullet.position.distanceTo(cameraCS2.position) > 100) {
+                    sceneCS2.remove(bullet);
+                    bullets.splice(i, 1);
+                    continue;
+                }
+                
+                const bulletBox = new THREE.Box3().setFromObject(bullet);
+                let hitTarget = false;
+                
+                for(let j = targets.length - 1; j >= 0; j--) {
+                    const target = targets[j];
+                    const targetBox = new THREE.Box3().setFromObject(target);
+                    
+                    if (bulletBox.intersectsBox(targetBox)) {
+                        sceneCS2.remove(target);
+                        targets.splice(j, 1);
+                        
+                        scoreCS2 += 100;
+                        scoreCS2Element.innerText = scoreCS2;
+                        targetsLeftElement.innerText = targets.length;
+                        
+                        sceneCS2.remove(bullet);
+                        bullets.splice(i, 1);
+                        
+                        hitTarget = true;
+                        break;
+                    }
+                }
                 
                 if (targets.length === 0) {
                     gameStatusElement.innerText = "Tebrikler! Tüm hedefleri vurdun. Yeni bir oyun için sayfayı yenile.";
@@ -1224,40 +1308,77 @@
             }
         }
         
-        function onJoystickStart(e) {
+        function onMoveJoystickStart(e) {
             e.preventDefault();
-            joystickActive = true;
-            const touch = e.touches[0];
-            const rect = joystickContainer.getBoundingClientRect();
-            joystickCenter = {
-                x: rect.left + rect.width / 2,
-                y: rect.top + rect.height / 2
-            };
-            onJoystickMove(e);
+            const touch = e.changedTouches[0];
+            const rect = moveJoystickContainer.getBoundingClientRect();
+            moveJoystickActive = touch.clientX >= rect.left && touch.clientX <= rect.right && touch.clientY >= rect.top && touch.clientY <= rect.bottom;
+            
+            if (moveJoystickActive) {
+                moveJoystickCenter = {
+                    x: rect.left + rect.width / 2,
+                    y: rect.top + rect.height / 2
+                };
+                onMoveJoystickMove(e);
+            }
         }
 
-        function onJoystickMove(e) {
-            if (!joystickActive) return;
+        function onMoveJoystickMove(e) {
+            if (!moveJoystickActive) return;
             e.preventDefault();
-            const touch = e.touches[0];
-            let dx = touch.clientX - joystickCenter.x;
-            let dy = touch.clientY - joystickCenter.y;
+            const touch = Array.from(e.changedTouches).find(t => {
+                const rect = moveJoystickContainer.getBoundingClientRect();
+                return t.clientX >= rect.left && t.clientX <= rect.right && t.clientY >= rect.top && t.clientY <= rect.bottom;
+            });
+            if (!touch) return;
+            
+            let dx = touch.clientX - moveJoystickCenter.x;
+            let dy = touch.clientY - moveJoystickCenter.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
 
-            if (distance > joystickRadius) {
+            if (distance > moveJoystickRadius) {
                 const angle = Math.atan2(dy, dx);
-                dx = Math.cos(angle) * joystickRadius;
-                dy = Math.sin(angle) * joystickRadius;
+                dx = Math.cos(angle) * moveJoystickRadius;
+                dy = Math.sin(angle) * moveJoystickRadius;
             }
 
-            joystickKnob.style.transform = `translate(-50%, -50%) translate(${dx}px, ${dy}px)`;
-            joystickPos = { x: dx / joystickRadius, y: -dy / joystickRadius };
+            document.getElementById('cs2-joystick-knob').style.transform = `translate(-50%, -50%) translate(${dx}px, ${dy}px)`;
+            
+            moveJoystickPos = { x: dx / moveJoystickRadius, y: dy / moveJoystickRadius };
         }
 
-        function onJoystickEnd(e) {
-            joystickActive = false;
-            joystickKnob.style.transform = 'translate(-50%, -50%)';
-            joystickPos = { x: 0, y: 0 };
+        function onMoveJoystickEnd(e) {
+            if (!moveJoystickActive) return;
+            moveJoystickActive = false;
+            document.getElementById('cs2-joystick-knob').style.transform = 'translate(-50%, -50%)';
+            moveJoystickPos = { x: 0, y: 0 };
+        }
+        
+        function onLookStart(e) {
+            e.preventDefault();
+            const touch = e.changedTouches[0];
+            lookTouchIdentifier = touch.identifier;
+        }
+
+        function onLookMove(e) {
+            if (lookTouchIdentifier === null) return;
+            e.preventDefault();
+            const touch = Array.from(e.changedTouches).find(t => t.identifier === lookTouchIdentifier);
+            if (!touch) return;
+            
+            const rect = lookPanel.getBoundingClientRect();
+            const dx = touch.clientX - (rect.left + rect.width / 2);
+            const dy = touch.clientY - (rect.top + rect.height / 2);
+            
+            cameraCS2.rotation.y -= dx * lookSensitivity * 0.5;
+            const newRotationX = cameraCS2.rotation.x - dy * lookSensitivity * 0.5;
+            cameraCS2.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, newRotationX));
+        }
+        
+        function onLookEnd(e) {
+            if (lookTouchIdentifier === null) return;
+            e.preventDefault();
+            lookTouchIdentifier = null;
         }
 
         function animateCS2() {
@@ -1268,8 +1389,8 @@
             velocityCS2.y -= 9.8 * 2.0 * delta;
             
             if (isMobileDevice()) {
-                directionCS2.z = joystickPos.y;
-                directionCS2.x = joystickPos.x;
+                directionCS2.z = -moveJoystickPos.y;
+                directionCS2.x = moveJoystickPos.x;
             } else {
                 directionCS2.z = Number(moveForward) - Number(moveBackward);
                 directionCS2.x = Number(moveRight) - Number(moveLeft);
@@ -1279,9 +1400,6 @@
                 directionCS2.normalize();
             }
 
-            velocityCS2.x = -directionCS2.x * playerSpeedCS2 * 60;
-            velocityCS2.z = -directionCS2.z * playerSpeedCS2 * 60;
-            
             const forwardVector = new THREE.Vector3();
             cameraCS2.getWorldDirection(forwardVector);
             forwardVector.y = 0;
@@ -1291,15 +1409,18 @@
             rightVector.crossVectors(cameraCS2.up, forwardVector);
             rightVector.normalize();
             
-            cameraCS2.position.add(forwardVector.multiplyScalar(velocityCS2.z * delta));
-            cameraCS2.position.add(rightVector.multiplyScalar(velocityCS2.x * delta));
+            cameraCS2.position.add(forwardVector.multiplyScalar(directionCS2.z * playerSpeedCS2 * 60 * delta));
+            cameraCS2.position.add(rightVector.multiplyScalar(directionCS2.x * playerSpeedCS2 * 60 * delta));
+
+            cameraCS2.position.y += velocityCS2.y * delta;
             
             if (cameraCS2.position.y <= playerHeight) {
                 velocityCS2.y = 0;
                 cameraCS2.position.y = playerHeight;
                 canJump = true;
             }
-
+            
+            updateBullets();
             rendererCS2.render(sceneCS2, cameraCS2);
         }
         
