@@ -1,271 +1,623 @@
-<script type="module">
-    // THREE.js ve GLTFLoader modüllerini import ediyoruz.
-    // Bu modüller, 3D ortamı ve modelleri yüklememizi sağlar.
-    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.126.0/build/three.module.js';
-    import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.126.0/examples/jsm/loaders/GLTFLoader.js';
-
-    const gameContainer = document.getElementById('game-container');
-    const scoreElement = document.getElementById('score-3d');
-    const gameOverText = document.getElementById('gameOverText-3d');
-    
-    let scene, camera, renderer, playerCar, road, gameRunning = false, score = 0;
-    const otherCars = [];
-    
-    // Hız kontrolü için yeni değişkenler tanımlıyoruz
-    let playerSpeed = 0.1;
-    let targetSpeed = 0.1; // Oyuncunun ulaşmak istediği hız
-    const acceleration = 0.0002;
-    const deceleration = 0.0004;
-
-    // Akıcı hareket için yeni değişkenler tanımlıyoruz
-    let targetX = 0; // Oyuncu arabanın gitmek istediği hedef X konumu
-    const lateralSpeed = 0.05; // Yana doğru hareket hızı
-
-    // 3D araba modeli için URL tanımlıyoruz.
-    const carModelUrl = 'https://threejs.org/examples/models/gltf/car.gltf';
-    let playerCarModel, obstacleCarModel;
-
-    const loader = new GLTFLoader();
-
-    function init() {
-        scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87ceeb); // Gökyüzü rengi
-
-        camera = new THREE.PerspectiveCamera(75, gameContainer.clientWidth / gameContainer.clientHeight, 0.1, 1000);
-        camera.position.z = 5;
-        camera.position.y = 2;
-        camera.rotation.x = -Math.PI / 8; // Kamerayı biraz aşağı doğru eğiyoruz
-
-        // Işıklandırma ekliyoruz
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Genel ortam ışığı
-        scene.add(ambientLight);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8); // Yönlü ışık
-        directionalLight.position.set(0, 10, 5);
-        scene.add(directionalLight);
-
-        renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(gameContainer.clientWidth, gameContainer.clientHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
-        gameContainer.appendChild(renderer.domElement);
-
-        // Yol geometrisi ve malzemesi oluşturma
-        const roadGeometry = new THREE.BoxGeometry(3.2, 0.1, 1000);
-        const roadMaterial = new THREE.MeshLambertMaterial({ color: 0x4a6566 });
-        road = new THREE.Mesh(roadGeometry, roadMaterial);
-        road.position.z = -500;
-        scene.add(road);
-
-        // Yol şeritleri oluşturma
-        const roadLines = [];
-        for (let i = -500; i < 500; i += 2) {
-            const lineGeometry = new THREE.BoxGeometry(0.1, 0.1, 1);
-            const lineMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
-            const line = new THREE.Mesh(lineGeometry, lineMaterial);
-            line.position.set(0, 0.06, i);
-            scene.add(line);
-            roadLines.push(line);
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eyüp Ensar Erkul - Geleceğin Projeleri</title>
+    <style>
+        /* Genel Stiller */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+            scroll-behavior: smooth;
         }
-        window.roadLines = roadLines;
 
-        // 3D modelleri yükleyen fonksiyonu çağırıyoruz
-        loadModels();
+        .container {
+            width: 85%;
+            margin: auto;
+            overflow: hidden;
+            padding: 20px 0;
+        }
 
-        // Olay dinleyicileri
-        document.addEventListener('keydown', onKeyDown);
-        document.addEventListener('keyup', onKeyUp);
-        window.addEventListener('resize', onResize);
-        gameContainer.addEventListener('click', startGame);
+        /* Başlık / Navbar */
+        header {
+            background: #2c3e50;
+            color: #fff;
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        header .profile-name {
+            margin: 0;
+            font-size: 2.8em;
+            letter-spacing: 1px;
+        }
+
+        header .tagline {
+            font-size: 1.1em;
+            margin-top: 5px;
+            opacity: 0.9;
+        }
+
+        nav ul {
+            padding: 0;
+            list-style: none;
+            margin-top: 15px;
+        }
+
+        nav ul li {
+            display: inline;
+            margin: 0 15px;
+        }
+
+        nav ul li a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1em;
+            transition: color 0.3s ease;
+        }
+
+        nav ul li a:hover {
+            color: #1abc9c; /* Turkuaz tonu */
+        }
+
+        /* Hakkında Bölümü */
+        #about {
+            background: #fff;
+            padding: 60px 0;
+            text-align: center;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        #about img {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 25px;
+            border: 5px solid #1abc9c;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        #about h2 {
+            font-size: 2.5em;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        #about p {
+            max-width: 800px;
+            margin: 0 auto;
+            font-size: 1.1em;
+            color: #555;
+        }
+
+        /* Projeler Bölümü */
+        #projects {
+            padding: 60px 0;
+            background-color: #f9f9f9;
+            text-align: center;
+        }
+
+        #projects h2 {
+            font-size: 2.5em;
+            color: #2c3e50;
+            margin-bottom: 40px;
+        }
+
+        .project-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .project-card {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-align: left;
+        }
+
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .project-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .project-content {
+            padding: 25px;
+        }
+
+        .project-content h3 {
+            font-size: 1.8em;
+            color: #1abc9c;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .project-content p {
+            font-size: 1em;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .project-content a {
+            display: inline-block;
+            background: #2c3e50;
+            color: #fff;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        .project-content a:hover {
+            background: #1abc9c;
+        }
+
+        /* İletişim Bölümü */
+        #contact {
+            background: #2c3e50;
+            color: #fff;
+            padding: 60px 0;
+            text-align: center;
+        }
+
+        #contact h2 {
+            font-size: 2.5em;
+            margin-bottom: 30px;
+        }
+
+        #contact p {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+
+        #contact a {
+            color: #1abc9c;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s ease;
+        }
+
+        #contact a:hover {
+            color: #fff;
+        }
+
+        .social-icons {
+            margin-top: 30px;
+        }
+
+        .social-icons a {
+            color: #fff;
+            font-size: 2.5em;
+            margin: 0 15px;
+            transition: color 0.3s ease;
+        }
+
+        .social-icons a:hover {
+            color: #1abc9c;
+        }
+
+        /* Alt Bilgi */
+        footer {
+            background: #34495e;
+            color: #fff;
+            text-align: center;
+            padding: 20px 0;
+            font-size: 0.9em;
+        }
+
+        /* Duyarlı Tasarım */
+        @media (max-width: 768px) {
+            header .profile-name {
+                font-size: 2.2em;
+            }
+            header .tagline {
+                font-size: 1em;
+            }
+            nav ul li {
+                display: block;
+                margin: 10px 0;
+            }
+            #about h2, #projects h2, #contact h2 {
+                font-size: 2em;
+            }
+            .project-grid {
+                grid-template-columns: 1fr;
+            }
+            .project-card {
+                margin: 0 auto;
+            }
+            .social-icons a {
+                font-size: 2em;
+                margin: 0 10px;
+            }
+        }
+    </style>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1 class="profile-name">Eyüp Ensar Erkul</h1>
+            <p class="tagline">13 Yaşında, Büyük Ufuklara Açılan Bir Gelecek!</p>
+            <nav>
+                <ul>
+                    <li><a href="#about">Hakkımda</a></li>
+                    <li><a href="#projects">Projelerim</a></li>
+                    <li><a href="#contact">İletişim</a></li>
+                    <li><a href="#game-3d">3D Oyun</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section id="about">
+            <div class="container">
+                <img src="https://via.placeholder.com/180/1abc9c/ffffff?text=EEY" alt="Eyüp Ensar Erkul">
+                <h2>Merhaba! Ben Eyüp Ensar Erkul.</h2>
+                <p>
+                    13 yaşındayım ama hayallerim ve öğrenme hevesim yaşımın çok ötesinde. Kod yazmaktan, yeni teknolojileri keşfetmekten ve geleceğe yön verecek projeler geliştirmekten büyük keyif alıyorum. Her gün kendimi geliştirmek için çalışıyor, büyük ufuklara yelken açıyorum! Bu portfolyo, şimdiye kadar yaptığım ve gelecekte yapacağım projelerin bir başlangıcı.
+                </p>
+            </div>
+        </section>
+
+        <section id="projects">
+            <div class="container">
+                <h2>Projelerim</h2>
+                <div class="project-grid">
+                    <div class="project-card">
+                        <img src="https://via.placeholder.com/400x200/2980b9/ffffff?text=Web+Sitesi+Projesi+1" alt="Web Sitesi Projesi 1">
+                        <div class="project-content">
+                            <h3>HTML/CSS Web Sitesi</h3>
+                            <p>İlk HTML ve CSS kullanarak geliştirdiğim basit bir web sitesi projesi. Temel tasarım prensiplerini ve kodlama mantığını öğrendim.</p>
+                            <a href="#" target="_blank">Detayları Gör</a>
+                        </div>
+                    </div>
+
+                    <div class="project-card">
+                        <img src="https://via.placeholder.com/400x200/8e44ad/ffffff?text=Restorant+WebSitesi+2" alt="Restorant WebSitesi 2">
+                        <div class="project-content">
+                            <h3>Basit Python Uygulaması</h3>
+                            <p>Canva üzerinden Canvanın sınırlarını aşarak bir restoran sitesi yaptım sitede canlı sohbet gibi yenilikçi şeyler ekledim.</p>
+                            <a href="#" target="_blank">Detayları Gör</a>
+                        </div>
+                    </div>
+
+                    <div class="project-card">
+                        <img src="https://via.placeholder.com/400x200/d35400/ffffff?text=Oyun+Geliştirme+3" alt="Oyun Geliştirme 3">
+                        <div class=
+"project-content">
+                            <h3>Scratch ile Oyun</h3>
+                            <p>Scratch platformunda basit bir interaktif oyun tasarladım. Karakter animasyonları ve puanlama sistemi ekledim.</p>
+                            <a href="#" target="_blank">Detayları Gör</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact">
+            <div class="container">
+                <h2>Bana Ulaşın</h2>
+                <p>Yeni fikirler ve projeler hakkında konuşmaktan mutluluk duyarım. Bana ulaşmaktan çekinme!</p>
+                <p>E-posta: <a href="mailto:eposta@example.com">eposta@example.com</a></p>
+                <div class="social-icons">
+                    <a href="https://github.com/eyupensarerkul" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
+                    <a href="https://linkedin.com/in/eyupensarerkul" target="_blank" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                    <a href="https://sosyal.teknofest.app/eyupensarerkul" target="_blank" title="Next Sosyal"><i class="fab fa-twitter"></i></a>
+                </div>
+            </div>
+        </section>
+
+        ---
         
-        gameContainer.addEventListener('touchstart', onTouchStart);
-        gameContainer.addEventListener('touchend', onTouchEnd);
-    }
+        <section id="game-3d" style="text-align: center; padding: 40px 0; background-color: #f0f2f5;">
+            <div class="container">
+                <h2>3D Araba Sollama Oyunu</h2>
+                <p>Oynamak için tuvale tıkla. Klavyedeki sağ ve sol ok tuşlarıyla veya telefonunda ekranın sağına ve soluna dokunarak arabanı kontrol et!</p>
+                <div id="game-container" style="width: 100%; height: 500px; max-width: 800px; margin: 0 auto; border: 5px solid #2c3e50; border-radius: 10px;"></div>
+                <div style="margin-top: 15px; font-size: 1.2em; font-weight: bold;">
+                    <p>Puan: <span id="score-3d">0</span></p>
+                    <p id="gameOverText-3d" style="color: red; display: none;">Oyun Bitti! Sayfayı yenileyerek tekrar oyna.</p>
+                </div>
+            </div>
+        </section>
+    </main>
 
-    function loadModels() {
-        // carModelUrl'deki 3D modeli yüklüyoruz.
-        loader.load(carModelUrl, function(gltf) {
-            // Oyuncu arabası modelini alıp sahneye ekliyoruz
-            playerCarModel = gltf.scene;
-            playerCarModel.scale.set(0.01, 0.01, 0.01); // Modelin boyutunu küçültüyoruz
-            playerCarModel.position.set(0, 0.25, 4);
-            playerCarModel.rotation.y = Math.PI; // Arabayı doğru yöne döndürüyoruz
-            scene.add(playerCarModel);
-            playerCar = playerCarModel;
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Eyüp Ensar Erkul. Tüm Hakları Saklıdır.</p>
+        </div>
+    </footer>
 
-            // Engeller için modelin bir kopyasını klonluyoruz
-            obstacleCarModel = gltf.scene.clone(); 
-            spawnInitialCars(); // İlk engelleri oluşturuyoruz
-            animate();
-        }, undefined, function(error) {
-            // Eğer model yüklenemezse, hata mesajı verip varsayılan kutu modellerini kullanıyoruz
-            console.error(error);
-            console.log("3D model yüklenemedi, varsayılan kutu modelleri kullanılıyor.");
-            playerCar = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 1), new THREE.MeshLambertMaterial({ color: 0x27ae60 }));
-            playerCar.position.set(0, 0.25, 4);
-            scene.add(playerCar);
+    <script type="module">
+        // THREE.js ve GLTFLoader modüllerini import ediyoruz.
+        // Bu modüller, 3D ortamı ve modelleri yüklememizi sağlar.
+        import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.126.0/build/three.module.js';
+        import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.126.0/examples/jsm/loaders/GLTFLoader.js';
+
+        const gameContainer = document.getElementById('game-container');
+        const scoreElement = document.getElementById('score-3d');
+        const gameOverText = document.getElementById('gameOverText-3d');
+        
+        let scene, camera, renderer, playerCar, road, gameRunning = false, score = 0;
+        const otherCars = [];
+        
+        // Hız kontrolü için yeni değişkenler tanımlıyoruz
+        let playerSpeed = 0.1;
+        let targetSpeed = 0.1; // Oyuncunun ulaşmak istediği hız
+        const acceleration = 0.0002;
+        const deceleration = 0.0004;
+
+        // Akıcı hareket için yeni değişkenler tanımlıyoruz
+        let targetX = 0; // Oyuncu arabanın gitmek istediği hedef X konumu
+        const lateralSpeed = 0.05; // Yana doğru hareket hızı
+
+        // 3D araba modeli için URL tanımlıyoruz.
+        const carModelUrl = 'https://threejs.org/examples/models/gltf/car.gltf';
+        let playerCarModel, obstacleCarModel;
+
+        const loader = new GLTFLoader();
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87ceeb); // Gökyüzü rengi
+
+            camera = new THREE.PerspectiveCamera(75, gameContainer.clientWidth / gameContainer.clientHeight, 0.1, 1000);
+            camera.position.z = 5;
+            camera.position.y = 2;
+            camera.rotation.x = -Math.PI / 8; // Kamerayı biraz aşağı doğru eğiyoruz
+
+            // Işıklandırma ekliyoruz
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Genel ortam ışığı
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8); // Yönlü ışık
+            directionalLight.position.set(0, 10, 5);
+            scene.add(directionalLight);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(gameContainer.clientWidth, gameContainer.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            gameContainer.appendChild(renderer.domElement);
+
+            // Yol geometrisi ve malzemesi oluşturma
+            const roadGeometry = new THREE.BoxGeometry(3.2, 0.1, 1000);
+            const roadMaterial = new THREE.MeshLambertMaterial({ color: 0x4a6566 });
+            road = new THREE.Mesh(roadGeometry, roadMaterial);
+            road.position.z = -500;
+            scene.add(road);
+
+            // Yol şeritleri oluşturma
+            const roadLines = [];
+            for (let i = -500; i < 500; i += 2) {
+                const lineGeometry = new THREE.BoxGeometry(0.1, 0.1, 1);
+                const lineMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
+                const line = new THREE.Mesh(lineGeometry, lineMaterial);
+                line.position.set(0, 0.06, i);
+                scene.add(line);
+                roadLines.push(line);
+            }
+            window.roadLines = roadLines;
+
+            // 3D modelleri yükleyen fonksiyonu çağırıyoruz
+            loadModels();
+
+            // Olay dinleyicileri
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
+            window.addEventListener('resize', onResize);
+            gameContainer.addEventListener('click', startGame);
             
-            obstacleCarModel = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 1), new THREE.MeshLambertMaterial({ color: 0xe74c3c }));
-            spawnInitialCars();
-            animate();
-        });
-    }
-
-    function startGame() {
-        if (gameRunning) return;
-        gameRunning = true;
-        score = 0;
-        playerSpeed = 0.1;
-        targetSpeed = 0.1;
-        gameOverText.style.display = 'none';
-        
-        // Arabaların pozisyonlarını rastgele sıfırlıyoruz
-        otherCars.forEach(car => {
-            const lane = Math.floor(Math.random() * 3) - 1;
-            const zPosition = -Math.random() * 200 - 20;
-            car.position.set(lane, 0.25, zPosition);
-        });
-        
-        animate();
-    }
-
-    function spawnInitialCars() {
-        for (let i = 0; i < 20; i++) {
-            let car;
-            // Model yüklendiyse, 3D modelin kopyasını kullan
-            if (obstacleCarModel.type === 'Scene') { 
-                car = obstacleCarModel.clone();
-                car.scale.set(0.01, 0.01, 0.01);
-                car.rotation.y = Math.PI;
-            } else { // Model yüklenemediyse, varsayılan kutu modelini kullan
-                car = obstacleCarModel.clone();
-            }
-            const lane = Math.floor(Math.random() * 3) - 1;
-            const zPosition = -Math.random() * 200 - 20;
-            car.position.set(lane, 0.25, zPosition);
-            scene.add(car);
-            otherCars.push(car);
-        }
-    }
-
-    // Klavye kontrolü için tuş basıldığında
-    function onKeyDown(event) {
-        if (!gameRunning) return;
-        if (event.key === 'ArrowLeft') {
-            targetX = Math.max(playerCar.position.x - 1, -1); // Hedef konumu sola ayarla
-        } else if (event.key === 'ArrowRight') {
-            targetX = Math.min(playerCar.position.x + 1, 1); // Hedef konumu sağa ayarla
-        } else if (event.key === 'ArrowUp') {
-            targetSpeed = 0.2; // Gaz vermek için hızı artır
-        } else if (event.key === 'ArrowDown') {
-            targetSpeed = 0.05; // Fren yapmak için hızı azalt
-        }
-    }
-
-    // Klavye kontrolü için tuş bırakıldığında
-    function onKeyUp(event) {
-        if (!gameRunning) return;
-        if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
-            targetSpeed = 0.1; // Hızı normale döndür
-        }
-    }
-
-    // Dokunmatik kontrol için
-    let touchMoveDirection = 0; // -1: sol, 0: dur, 1: sağ
-    let touchSpeedDirection = 0; // -1: fren, 0: normal, 1: gaz
-
-    function onTouchStart(event) {
-        if (!gameRunning || event.touches.length === 0) return;
-        
-        const touchX = event.touches[0].clientX;
-        const screenWidth = window.innerWidth;
-        const screenHeight = window.innerHeight;
-
-        // Dokunmanın yatay konumu (sağ-sol hareket)
-        if (touchX < screenWidth / 2) {
-            targetX = Math.max(playerCar.position.x - 1, -1);
-        } else if (touchX > screenWidth / 2) {
-            targetX = Math.min(playerCar.position.x + 1, 1);
+            gameContainer.addEventListener('touchstart', onTouchStart);
+            gameContainer.addEventListener('touchend', onTouchEnd);
         }
 
-        // Dokunmanın dikey konumu (gaz-fren)
-        const touchY = event.touches[0].clientY;
-        if (touchY < screenHeight / 2) {
-            targetSpeed = 0.2; // Gaz
-        } else {
-            targetSpeed = 0.05; // Fren
+        function loadModels() {
+            // carModelUrl'deki 3D modeli yüklüyoruz.
+            loader.load(carModelUrl, function(gltf) {
+                // Oyuncu arabası modelini alıp sahneye ekliyoruz
+                playerCarModel = gltf.scene;
+                playerCarModel.scale.set(0.01, 0.01, 0.01); // Modelin boyutunu küçültüyoruz
+                playerCarModel.position.set(0, 0.25, 4);
+                playerCarModel.rotation.y = Math.PI; // Arabayı doğru yöne döndürüyoruz
+                scene.add(playerCarModel);
+                playerCar = playerCarModel;
+
+                // Engeller için modelin bir kopyasını klonluyoruz
+                obstacleCarModel = gltf.scene.clone(); 
+                spawnInitialCars(); // İlk engelleri oluşturuyoruz
+                animate();
+            }, undefined, function(error) {
+                // Eğer model yüklenemezse, hata mesajı verip varsayılan kutu modellerini kullanıyoruz
+                console.error(error);
+                console.log("3D model yüklenemedi, varsayılan kutu modelleri kullanılıyor.");
+                playerCar = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 1), new THREE.MeshLambertMaterial({ color: 0x27ae60 }));
+                playerCar.position.set(0, 0.25, 4);
+                scene.add(playerCar);
+                
+                obstacleCarModel = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 1), new THREE.MeshLambertMaterial({ color: 0xe74c3c }));
+                spawnInitialCars();
+                animate();
+            });
         }
-    }
 
-    function onTouchEnd(event) {
-        if (!gameRunning) return;
-        targetSpeed = 0.1; // Hızı normale döndür
-    }
-
-    function update() {
-        if (!gameRunning) return;
-        
-        // Hızı akıcı bir şekilde hedef hıza yaklaştırıyoruz
-        playerSpeed += (targetSpeed - playerSpeed) * 0.05;
-
-        // Arabanın yatay pozisyonunu hedef konuma doğru akıcı bir şekilde hareket ettiriyoruz
-        playerCar.position.x += (targetX - playerCar.position.x) * lateralSpeed;
-
-        const moveDistance = playerSpeed;
-        
-        // Yol ve yol şeritlerini hareket ettirme
-        road.position.z += moveDistance;
-        if(road.position.z > 0) road.position.z = -500;
-        
-        window.roadLines.forEach(line => {
-            line.position.z += moveDistance;
-            if(line.position.z > camera.position.z + 10) {
-                line.position.z -= 1000;
-            }
-        });
-
-        // Engel arabalarını hareket ettirme ve döngüye sokma
-        otherCars.forEach(car => {
-            car.position.z += moveDistance;
-            if (car.position.z > camera.position.z + 10) {
+        function startGame() {
+            if (gameRunning) return;
+            gameRunning = true;
+            score = 0;
+            playerSpeed = 0.1;
+            targetSpeed = 0.1;
+            gameOverText.style.display = 'none';
+            
+            // Arabaların pozisyonlarını rastgele sıfırlıyoruz
+            otherCars.forEach(car => {
                 const lane = Math.floor(Math.random() * 3) - 1;
                 const zPosition = -Math.random() * 200 - 20;
                 car.position.set(lane, 0.25, zPosition);
-            }
-        });
-
-        // Çarpışma kontrolü
-        checkCollisions();
-
-        // Puanı artırma
-        score += moveDistance * 10;
-        scoreElement.innerText = Math.floor(score);
-    }
-
-    function checkCollisions() {
-        const playerBox = new THREE.Box3().setFromObject(playerCar);
-        otherCars.forEach(car => {
-            const carBox = new THREE.Box3().setFromObject(car);
-            if (playerBox.intersectsBox(carBox)) {
-                // Çarpışma durumunda oyunu durdurma
-                gameRunning = false;
-                gameOverText.style.display = 'block';
-            }
-        });
-    }
-
-    function onResize() {
-        camera.aspect = gameContainer.clientWidth / gameContainer.clientHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(gameContainer.clientWidth, gameContainer.clientHeight);
-    }
-
-    function animate() {
-        if (gameRunning) {
-            requestAnimationFrame(animate);
-            update();
-            renderer.render(scene, camera);
+            });
+            
+            animate();
         }
-    }
 
-    // Oyunu başlatıyoruz
-    init();
-</script>
+        function spawnInitialCars() {
+            for (let i = 0; i < 20; i++) {
+                let car;
+                // Model yüklendiyse, 3D modelin kopyasını kullan
+                if (obstacleCarModel.type === 'Scene') { 
+                    car = obstacleCarModel.clone();
+                    car.scale.set(0.01, 0.01, 0.01);
+                    car.rotation.y = Math.PI;
+                } else { // Model yüklenemediyse, varsayılan kutu modelini kullan
+                    car = obstacleCarModel.clone();
+                }
+                const lane = Math.floor(Math.random() * 3) - 1;
+                const zPosition = -Math.random() * 200 - 20;
+                car.position.set(lane, 0.25, zPosition);
+                scene.add(car);
+                otherCars.push(car);
+            }
+        }
+
+        // Klavye kontrolü için tuş basıldığında
+        function onKeyDown(event) {
+            if (!gameRunning) return;
+            if (event.key === 'ArrowLeft') {
+                targetX = Math.max(playerCar.position.x - 1, -1); // Hedef konumu sola ayarla
+            } else if (event.key === 'ArrowRight') {
+                targetX = Math.min(playerCar.position.x + 1, 1); // Hedef konumu sağa ayarla
+            } else if (event.key === 'ArrowUp') {
+                targetSpeed = 0.2; // Gaz vermek için hızı artır
+            } else if (event.key === 'ArrowDown') {
+                targetSpeed = 0.05; // Fren yapmak için hızı azalt
+            }
+        }
+
+        // Klavye kontrolü için tuş bırakıldığında
+        function onKeyUp(event) {
+            if (!gameRunning) return;
+            if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                targetSpeed = 0.1; // Hızı normale döndür
+            }
+        }
+
+        // Dokunmatik kontrol için
+        let touchMoveDirection = 0; // -1: sol, 0: dur, 1: sağ
+        let touchSpeedDirection = 0; // -1: fren, 0: normal, 1: gaz
+
+        function onTouchStart(event) {
+            if (!gameRunning || event.touches.length === 0) return;
+            
+            const touchX = event.touches[0].clientX;
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+
+            // Dokunmanın yatay konumu (sağ-sol hareket)
+            if (touchX < screenWidth / 2) {
+                targetX = Math.max(playerCar.position.x - 1, -1);
+            } else if (touchX > screenWidth / 2) {
+                targetX = Math.min(playerCar.position.x + 1, 1);
+            }
+
+            // Dokunmanın dikey konumu (gaz-fren)
+            const touchY = event.touches[0].clientY;
+            if (touchY < screenHeight / 2) {
+                targetSpeed = 0.2; // Gaz
+            } else {
+                targetSpeed = 0.05; // Fren
+            }
+        }
+
+        function onTouchEnd(event) {
+            if (!gameRunning) return;
+            targetSpeed = 0.1; // Hızı normale döndür
+        }
+
+        function update() {
+            if (!gameRunning) return;
+            
+            // Hızı akıcı bir şekilde hedef hıza yaklaştırıyoruz
+            playerSpeed += (targetSpeed - playerSpeed) * 0.05;
+
+            // Arabanın yatay pozisyonunu hedef konuma doğru akıcı bir şekilde hareket ettiriyoruz
+            playerCar.position.x += (targetX - playerCar.position.x) * lateralSpeed;
+
+            const moveDistance = playerSpeed;
+            
+            // Yol ve yol şeritlerini hareket ettirme
+            road.position.z += moveDistance;
+            if(road.position.z > 0) road.position.z = -500;
+            
+            window.roadLines.forEach(line => {
+                line.position.z += moveDistance;
+                if(line.position.z > camera.position.z + 10) {
+                    line.position.z -= 1000;
+                }
+            });
+
+            // Engel arabalarını hareket ettirme ve döngüye sokma
+            otherCars.forEach(car => {
+                car.position.z += moveDistance;
+                if (car.position.z > camera.position.z + 10) {
+                    const lane = Math.floor(Math.random() * 3) - 1;
+                    const zPosition = -Math.random() * 200 - 20;
+                    car.position.set(lane, 0.25, zPosition);
+                }
+            });
+
+            // Çarpışma kontrolü
+            checkCollisions();
+
+            // Puanı artırma
+            score += moveDistance * 10;
+            scoreElement.innerText = Math.floor(score);
+        }
+
+        function checkCollisions() {
+            const playerBox = new THREE.Box3().setFromObject(playerCar);
+            otherCars.forEach(car => {
+                const carBox = new THREE.Box3().setFromObject(car);
+                if (playerBox.intersectsBox(carBox)) {
+                    // Çarpışma durumunda oyunu durdurma
+                    gameRunning = false;
+                    gameOverText.style.display = 'block';
+                }
+            });
+        }
+
+        function onResize() {
+            camera.aspect = gameContainer.clientWidth / gameContainer.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(gameContainer.clientWidth, gameContainer.clientHeight);
+        }
+
+        function animate() {
+            if (gameRunning) {
+                requestAnimationFrame(animate);
+                update();
+                renderer.render(scene, camera);
+            }
+        }
+
+        // Oyunu başlatıyoruz
+        init();
+    </script>
+</body>
+</html>
