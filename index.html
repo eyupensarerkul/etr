@@ -292,12 +292,12 @@
             color: #fff;
             border: 2px solid #fff;
             border-radius: 50%;
-            width: 80px; /* Daha büyük */
-            height: 80px; /* Daha büyük */
+            width: 90px; /* Daha büyük */
+            height: 90px; /* Daha büyük */
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 32px; /* Daha büyük */
+            font-size: 38px; /* Daha büyük */
             cursor: pointer;
             user-select: none; /* Seçimi engelleme */
             transition: background-color 0.3s ease, transform 0.1s ease;
@@ -472,7 +472,6 @@
         const otherCars = [];
         const environmentObjects = [];
         
-        // HIZ DEĞERLERİ ARTIRILDI
         let playerSpeed = 0.15;
         let targetSpeed = 0.15;
         const maxSpeed = 0.3;
@@ -483,17 +482,19 @@
         const lateralDeceleration = 0.02;
         const maxLateralSpeed = 0.05;
 
-        // YOL GENİŞLİĞİ VE ŞERİT SAYISI ARTIRILDI
         const roadWidth = 6.3;
         const playerXMin = -(roadWidth / 2) + 0.5;
         const playerXMax = (roadWidth / 2) - 0.5;
+        
+        // DİNAMİK YÜKLEME İÇİN DEĞİŞKENLER
+        const spawnDistance = 50; // Yeni objelerin ne kadar mesafede yükleneceği
+        const despawnDistance = 10; // Objelerin ne kadar mesafede silineceği
 
         const carModelUrl = 'https://threejs.org/examples/models/gltf/car.gltf';
         let playerCarModel, obstacleCarModel;
 
         const loader = new GLTFLoader();
 
-        // GENİŞ AÇILI KAMERA İÇİN DEĞERLER
         const defaultCameraFov = 90;
         const defaultCameraPosition = new THREE.Vector3(0, 3, 7);
         const pauseCameraFov = 110;
@@ -524,7 +525,6 @@
                 const lineGeometry = new THREE.BoxGeometry(0.1, 0.1, 1);
                 const lineMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
                 
-                // 6 ŞERİT İÇİN 4 YOL ÇİZGİSİ
                 const line1 = new THREE.Mesh(lineGeometry, lineMaterial);
                 line1.position.set(-2.1, 0.06, i);
                 scene.add(line1);
@@ -597,7 +597,7 @@
 
                 obstacleCarModel = gltf.scene.clone(); 
                 spawnInitialCars();
-                spawnEnvironmentObjects();
+                spawnInitialEnvironmentObjects();
                 animate();
             }, undefined, function(error) {
                 console.error(error);
@@ -608,7 +608,7 @@
                 
                 obstacleCarModel = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 1), new THREE.MeshLambertMaterial({ color: 0xe74c3c }));
                 spawnInitialCars();
-                spawnEnvironmentObjects();
+                spawnInitialEnvironmentObjects();
                 animate();
             });
         }
@@ -628,8 +628,7 @@
             return new THREE.CanvasTexture(canvas);
         }
 
-        function spawnEnvironmentObjects() {
-            // Ağaçları yerleştir
+        function createTree() {
             const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.2, 2, 8);
             const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x8b4513 });
             const leafGeometry = new THREE.ConeGeometry(1, 2, 8);
@@ -637,38 +636,70 @@
             const baseGeometry = new THREE.BoxGeometry(2, 0.1, 2);
             const baseMaterial = new THREE.MeshLambertMaterial({ color: 0x228b22 });
 
-            for (let i = 0; i < 50; i++) {
-                const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-                const leaves = new THREE.Mesh(leafGeometry, leafMaterial);
-                const base = new THREE.Mesh(baseGeometry, baseMaterial);
-                
-                leaves.position.y = 1.5;
-                trunk.position.y = 1;
-                base.position.y = 0.05;
+            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+            const leaves = new THREE.Mesh(leafGeometry, leafMaterial);
+            const base = new THREE.Mesh(baseGeometry, baseMaterial);
+            
+            leaves.position.y = 1.5;
+            trunk.position.y = 1;
+            base.position.y = 0.05;
 
-                const tree = new THREE.Group();
-                tree.add(trunk);
-                tree.add(leaves);
-                tree.add(base);
+            const tree = new THREE.Group();
+            tree.add(trunk);
+            tree.add(leaves);
+            tree.add(base);
+            return tree;
+        }
 
-                const zPosition = -Math.random() * 800 - 20;
-                const xPosition = (Math.random() > 0.5 ? 1 : -1) * (roadWidth / 2 + 1 + Math.random() * 5);
-                tree.position.set(xPosition, 0, zPosition);
-                scene.add(tree);
-                environmentObjects.push(tree);
-            }
-
-            // Reklam panosunu yerleştir
+        function createBillboard() {
             const billboardGeometry = new THREE.BoxGeometry(4, 2, 0.2);
             const billboardTexture = createBillboardTexture('Eyvallah Turkish Restaurant');
             const billboardMaterial = new THREE.MeshBasicMaterial({ map: billboardTexture });
             const billboardMesh = new THREE.Mesh(billboardGeometry, billboardMaterial);
-            
-            const zPosition = -Math.random() * 800 - 20;
-            const xPosition = (Math.random() > 0.5 ? 1 : -1) * (roadWidth / 2 + 3);
-            billboardMesh.position.set(xPosition, 2, zPosition);
-            scene.add(billboardMesh);
-            environmentObjects.push(billboardMesh);
+            billboardMesh.position.y = 2;
+            return billboardMesh;
+        }
+        
+        function spawnInitialCars() {
+            for (let i = 0; i < 20; i++) {
+                spawnNewCar();
+            }
+        }
+        
+        function spawnNewCar() {
+            let car;
+            if (obstacleCarModel && obstacleCarModel.type === 'Scene') { 
+                car = obstacleCarModel.clone();
+                car.scale.set(0.01, 0.01, 0.01);
+                car.rotation.y = Math.PI;
+            } else {
+                car = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 1), new THREE.MeshLambertMaterial({ color: Math.random() * 0xffffff }));
+            }
+            const laneIndex = (Math.floor(Math.random() * 6) - 2.5) * 1.4; // 6 şerit
+            const zPosition = camera.position.z - spawnDistance - Math.random() * 50;
+            car.position.set(laneIndex, 0.25, zPosition);
+            scene.add(car);
+            otherCars.push(car);
+        }
+        
+        function spawnInitialEnvironmentObjects() {
+            for (let i = 0; i < 50; i++) {
+                spawnNewEnvironmentObject();
+            }
+        }
+        
+        function spawnNewEnvironmentObject() {
+            let obj;
+            if (Math.random() > 0.9) { // Rastgele bir reklam panosu oluştur
+                obj = createBillboard();
+                obj.position.x = (Math.random() > 0.5 ? 1 : -1) * (roadWidth / 2 + 3);
+            } else { // Ağaç oluştur
+                obj = createTree();
+                obj.position.x = (Math.random() > 0.5 ? 1 : -1) * (roadWidth / 2 + 1 + Math.random() * 5);
+            }
+            obj.position.z = camera.position.z - spawnDistance - Math.random() * 100;
+            scene.add(obj);
+            environmentObjects.push(obj);
         }
 
         function startGame() {
@@ -682,37 +713,14 @@
             isPaused = false;
             
             otherCars.forEach(car => {
-                const laneIndex = Math.floor(Math.random() * 6) - 2.5;
-                const zPosition = -Math.random() * 200 - 20;
-                car.position.set(laneIndex, 0.25, zPosition);
+                car.position.z = camera.position.z - spawnDistance - Math.random() * 50;
             });
 
             environmentObjects.forEach(obj => {
-                const zPosition = -Math.random() * 800 - 20;
-                const xPosition = (Math.random() > 0.5 ? 1 : -1) * (roadWidth / 2 + 1 + Math.random() * 5);
-                obj.position.z = zPosition;
-                obj.position.x = xPosition;
+                obj.position.z = camera.position.z - spawnDistance - Math.random() * 100;
             });
             
             animate();
-        }
-
-        function spawnInitialCars() {
-            for (let i = 0; i < 20; i++) {
-                let car;
-                if (obstacleCarModel.type === 'Scene') { 
-                    car = obstacleCarModel.clone();
-                    car.scale.set(0.01, 0.01, 0.01);
-                    car.rotation.y = Math.PI;
-                } else {
-                    car = obstacleCarModel.clone();
-                }
-                const laneIndex = Math.floor(Math.random() * 6) - 2.5; // 6 şerit için konumlandırma
-                const zPosition = -Math.random() * 200 - 20;
-                car.position.set(laneIndex, 0.25, zPosition);
-                scene.add(car);
-                otherCars.push(car);
-            }
         }
         
         function togglePause() {
@@ -792,31 +800,31 @@
             const moveDistance = playerSpeed;
             
             road.position.z += moveDistance;
-            if(road.position.z > 0) road.position.z = -500;
+            if(road.position.z > camera.position.z + 10) road.position.z = camera.position.z - 1000;
             
             window.roadLines.forEach(line => {
                 line.position.z += moveDistance;
-                if(line.position.z > camera.position.z + 10) {
+                if(line.position.z > camera.position.z + despawnDistance) {
                     line.position.z -= 1000;
                 }
             });
 
-            otherCars.forEach(car => {
+            // Araba ve çevre objelerini dinamik olarak yönetme
+            otherCars.forEach((car, index) => {
                 car.position.z += moveDistance;
-                if (car.position.z > camera.position.z + 10) {
-                    const laneIndex = Math.floor(Math.random() * 6) - 2.5;
-                    const zPosition = -Math.random() * 200 - 20;
-                    car.position.set(laneIndex, 0.25, zPosition);
+                if (car.position.z > camera.position.z + despawnDistance) {
+                    scene.remove(car);
+                    otherCars.splice(index, 1);
+                    spawnNewCar();
                 }
             });
             
-            environmentObjects.forEach(obj => {
+            environmentObjects.forEach((obj, index) => {
                 obj.position.z += moveDistance;
-                if (obj.position.z > camera.position.z + 10) {
-                    const zPosition = -Math.random() * 800 - 20;
-                    const xPosition = (Math.random() > 0.5 ? 1 : -1) * (roadWidth / 2 + 1 + Math.random() * 5);
-                    obj.position.z = zPosition;
-                    obj.position.x = xPosition;
+                if (obj.position.z > camera.position.z + despawnDistance) {
+                    scene.remove(obj);
+                    environmentObjects.splice(index, 1);
+                    spawnNewEnvironmentObject();
                 }
             });
 
