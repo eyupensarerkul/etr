@@ -338,7 +338,7 @@
                 display: flex;
             }
         }
-
+        
         /* CS2 Oyunu için özel stil */
         #cs2-game-container {
             width: 100%;
@@ -360,9 +360,9 @@
             padding: 10px;
             border-radius: 5px;
             font-size: 14px;
+            z-index: 1;
         }
-        #mobile-controls {
-            display: none; /* Varsayılan olarak gizli */
+        #cs2-game-controls {
             position: absolute;
             bottom: 20px;
             left: 50%;
@@ -373,63 +373,74 @@
             align-items: flex-end;
             z-index: 10;
         }
-        #mobile-controls .control-column {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        #mobile-controls .move-pad {
-            display: grid;
-            grid-template-areas: ". up ." "left . right" ". down .";
-            width: 150px;
-            height: 150px;
-        }
-        #mobile-controls .move-pad button {
-            width: 50px;
-            height: 50px;
+        .cs2-control-button {
+            width: 70px;
+            height: 70px;
             background-color: rgba(44, 62, 80, 0.7);
             color: #fff;
             border: 2px solid #fff;
-            border-radius: 5px;
+            border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
             font-size: 24px;
+            user-select: none;
+            transition: background-color 0.3s ease;
         }
-        #mobile-controls .move-pad .up { grid-area: up; }
-        #mobile-controls .move-pad .down { grid-area: down; }
-        #mobile-controls .move-pad .left { grid-area: left; }
-        #mobile-controls .move-pad .right { grid-area: right; }
-
-        #mobile-controls .action-pad {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-end;
-            gap: 15px;
+        .cs2-control-button:active {
+            background-color: rgba(26, 188, 156, 0.9);
         }
-        #mobile-controls .action-pad .fire-button {
-            width: 90px;
-            height: 90px;
-            border-radius: 50%;
-            background-color: rgba(231, 76, 60, 0.8);
+        
+        #cs2-joystick-container {
+            position: relative;
+            width: 150px;
+            height: 150px;
             border: 2px solid #fff;
+            border-radius: 50%;
+            background-color: rgba(44, 62, 80, 0.5);
+            touch-action: none; /* Kaydırmayı engellemek için */
+        }
+
+        #cs2-joystick-knob {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70px;
+            height: 70px;
+            background-color: rgba(26, 188, 156, 0.8);
+            border: 2px solid #fff;
+            border-radius: 50%;
+        }
+
+        #cs2-fire-button {
+            width: 100px;
+            height: 100px;
+            background-color: rgba(231, 76, 60, 0.8);
             color: #fff;
-            font-size: 16px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            font-size: 20px;
             font-weight: bold;
         }
-        #mobile-controls .action-pad .jump-button {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
+
+        #cs2-jump-button {
+            width: 80px;
+            height: 80px;
             background-color: rgba(52, 152, 219, 0.8);
-            border: 2px solid #fff;
             color: #fff;
-            font-size: 14px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            font-size: 16px;
         }
+
         @media (max-width: 768px) {
-            #mobile-controls {
-                display: flex;
+            #cs2-game-container {
+                height: 100vh;
+                width: 100vw;
+                max-width: none;
+                margin: 0;
+                border-radius: 0;
             }
         }
     </style>
@@ -543,9 +554,9 @@
         <section id="cs2-game" style="text-align: center; padding: 40px 0; background-color: #e9ebee;">
             <div class="container">
                 <h2>CS2 Benzeri Atış Oyunu</h2>
-                <p>Oynamak için oyuna tıkla veya aşağıdaki kontrol tuşlarını kullan.</p>
+                <p>Oynamak için oyuna tıkla. Mobil cihazda yatay kullanın.</p>
                 <div id="cs2-game-container">
-                    <div id="cs2-game-info" style="display: none;">
+                    <div id="cs2-game-info">
                         <h3>Kontroller:</h3>
                         <p>W, A, S, D: Hareket et</p>
                         <p>Fare: Etrafa bak</p>
@@ -556,20 +567,13 @@
                         <p>Puan: <span id="cs2-score">0</span></p>
                     </div>
 
-                    <div id="mobile-controls">
-                        <div class="control-column">
-                            <div class="move-pad">
-                                <button class="up" id="cs2-up-button"><i class="fas fa-arrow-up"></i></button>
-                                <button class="left" id="cs2-left-button"><i class="fas fa-arrow-left"></i></button>
-                                <button class="right" id="cs2-right-button"><i class="fas fa-arrow-right"></i></button>
-                                <button class="down" id="cs2-down-button"><i class="fas fa-arrow-down"></i></button>
-                            </div>
+                    <div id="cs2-game-controls" style="display: none;">
+                        <div id="cs2-joystick-container">
+                            <div id="cs2-joystick-knob"></div>
                         </div>
-                        <div class="control-column">
-                            <div class="action-pad">
-                                <button id="cs2-jump-button">Zıpla</button>
-                                <button id="cs2-fire-button">Ateş</button>
-                            </div>
+                        <div style="display: flex; gap: 20px;">
+                            <button id="cs2-jump-button" class="cs2-control-button">Zıpla</button>
+                            <button id="cs2-fire-button" class="cs2-control-button">Ateş</button>
                         </div>
                     </div>
                 </div>
@@ -578,7 +582,6 @@
                 </div>
             </div>
         </section>
-
     </main>
 
     <footer>
@@ -989,13 +992,12 @@
         const targetsLeftElement = document.getElementById('cs2-targets-left');
         const scoreCS2Element = document.getElementById('cs2-score');
         const gameStatusElement = document.getElementById('cs2-game-status');
-        
-        const cs2UpButton = document.getElementById('cs2-up-button');
-        const cs2DownButton = document.getElementById('cs2-down-button');
-        const cs2LeftButton = document.getElementById('cs2-left-button');
-        const cs2RightButton = document.getElementById('cs2-right-button');
-        const cs2FireButton = document.getElementById('cs2-fire-button');
-        const cs2JumpButton = document.getElementById('cs2-jump-button');
+
+        const cs2Controls = document.getElementById('cs2-game-controls');
+        const joystickContainer = document.getElementById('cs2-joystick-container');
+        const joystickKnob = document.getElementById('cs2-joystick-knob');
+        const fireButton = document.getElementById('cs2-fire-button');
+        const jumpButton = document.getElementById('cs2-jump-button');
 
         let sceneCS2, cameraCS2, rendererCS2;
         let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
@@ -1009,13 +1011,12 @@
         const playerHeight = 1.8;
         const playerSpeedCS2 = 0.05;
 
-        // Kontrol bayrakları
-        let isMovingUp = false;
-        let isMovingDown = false;
-        let isMovingLeft = false;
-        let isMovingRight = false;
-        let isFiring = false;
-        
+        // Joystick için değişkenler
+        let joystickActive = false;
+        let joystickCenter = { x: 0, y: 0 };
+        let joystickPos = { x: 0, y: 0 };
+        const joystickRadius = 75;
+
         function initCS2Game() {
             sceneCS2 = new THREE.Scene();
             sceneCS2.background = new THREE.Color(0x87ceeb);
@@ -1047,33 +1048,68 @@
 
             gameContainerCS2.addEventListener('mousedown', onMouseDownCS2, false);
             gameContainerCS2.addEventListener('click', () => {
-                rendererCS2.domElement.requestPointerLock();
-                infoCS2.style.display = 'none';
-                gameStatusElement.innerText = "Oyun başladı! Tüm hedefleri vur.";
-                gameStatusElement.style.display = 'block';
+                if (document.pointerLockElement !== rendererCS2.domElement) {
+                    rendererCS2.domElement.requestPointerLock();
+                    infoCS2.style.display = 'none';
+                    gameStatusElement.innerText = "Oyun başladı! Tüm hedefleri vur.";
+                    gameStatusElement.style.display = 'block';
+                }
             });
             document.addEventListener('mousemove', onMouseMoveCS2, false);
             document.addEventListener('keydown', onKeyDownCS2, false);
             document.addEventListener('keyup', onKeyUpCS2, false);
             
             // Mobil kontroller
-            cs2UpButton.addEventListener('touchstart', () => isMovingUp = true);
-            cs2UpButton.addEventListener('touchend', () => isMovingUp = false);
-            cs2DownButton.addEventListener('touchstart', () => isMovingDown = true);
-            cs2DownButton.addEventListener('touchend', () => isMovingDown = false);
-            cs2LeftButton.addEventListener('touchstart', () => isMovingLeft = true);
-            cs2LeftButton.addEventListener('touchend', () => isMovingLeft = false);
-            cs2RightButton.addEventListener('touchstart', () => isMovingRight = true);
-            cs2RightButton.addEventListener('touchend', () => isMovingRight = false);
-            cs2FireButton.addEventListener('touchstart', (e) => { e.preventDefault(); onFireCS2(); });
-            cs2JumpButton.addEventListener('touchstart', () => {
+            if (isMobileDevice()) {
+                infoCS2.style.display = 'none';
+                cs2Controls.style.display = 'flex';
+                gameContainerCS2.addEventListener('click', toggleFullscreenCS2, false);
+            } else {
+                infoCS2.style.display = 'block';
+                cs2Controls.style.display = 'none';
+            }
+
+            joystickContainer.addEventListener('touchstart', onJoystickStart, false);
+            joystickContainer.addEventListener('touchmove', onJoystickMove, false);
+            joystickContainer.addEventListener('touchend', onJoystickEnd, false);
+            
+            fireButton.addEventListener('touchstart', (e) => { e.preventDefault(); onFireCS2(); });
+            jumpButton.addEventListener('touchstart', () => {
                 if(canJump) velocityCS2.y = 10;
                 canJump = false;
             });
-            
+
             window.addEventListener('resize', onResizeCS2);
+            window.addEventListener('orientationchange', onOrientationChange);
 
             animateCS2();
+        }
+
+        function isMobileDevice() {
+            return (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
+        }
+        
+        function toggleFullscreenCS2() {
+            if (!document.fullscreenElement) {
+                gameContainerCS2.requestFullscreen().catch(err => {
+                    console.log(`Tam ekran moduna geçilemedi: ${err.message}`);
+                });
+                screen.orientation.lock('landscape').catch(err => {
+                    console.log(`Yatay moda geçilemedi: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+                screen.orientation.unlock();
+            }
+        }
+
+        function onOrientationChange() {
+             if (window.orientation === 90 || window.orientation === -90) {
+                // Yatay ekran
+                if (isMobileDevice()) {
+                    toggleFullscreenCS2();
+                }
+            }
         }
         
         function onResizeCS2() {
@@ -1108,7 +1144,7 @@
                 
                 const x = (Math.random() - 0.5) * 40;
                 const z = (Math.random() - 0.5) * 40;
-                const y = Math.random() * 3 + 1; // Yüksekliği rastgele yap
+                const y = Math.random() * 3 + 1;
                 
                 targetMesh.position.set(x, y, z);
                 sceneCS2.add(targetMesh);
@@ -1126,6 +1162,12 @@
                 case 'Space': 
                     if (canJump) velocityCS2.y = 10;
                     canJump = false;
+                    break;
+                case 'Escape':
+                    if (document.fullscreenElement) {
+                        document.exitFullscreen();
+                        screen.orientation.unlock();
+                    }
                     break;
             }
         }
@@ -1152,7 +1194,7 @@
 
         function onMouseDownCS2(event) {
             if (document.pointerLockElement === rendererCS2.domElement) {
-                if (event.button === 0) { // Sol fare tuşu
+                if (event.button === 0) {
                     onFireCS2();
                 }
             }
@@ -1161,7 +1203,7 @@
         function onFireCS2() {
             const raycaster = new THREE.Raycaster();
             const mouse = new THREE.Vector2();
-            mouse.set(0, 0); // Ekranın tam ortası için
+            mouse.set(0, 0);
             raycaster.setFromCamera(mouse, cameraCS2);
             
             const intersects = raycaster.intersectObjects(targets);
@@ -1181,16 +1223,57 @@
                 }
             }
         }
+        
+        function onJoystickStart(e) {
+            e.preventDefault();
+            joystickActive = true;
+            const touch = e.touches[0];
+            const rect = joystickContainer.getBoundingClientRect();
+            joystickCenter = {
+                x: rect.left + rect.width / 2,
+                y: rect.top + rect.height / 2
+            };
+            onJoystickMove(e);
+        }
+
+        function onJoystickMove(e) {
+            if (!joystickActive) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            let dx = touch.clientX - joystickCenter.x;
+            let dy = touch.clientY - joystickCenter.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance > joystickRadius) {
+                const angle = Math.atan2(dy, dx);
+                dx = Math.cos(angle) * joystickRadius;
+                dy = Math.sin(angle) * joystickRadius;
+            }
+
+            joystickKnob.style.transform = `translate(-50%, -50%) translate(${dx}px, ${dy}px)`;
+            joystickPos = { x: dx / joystickRadius, y: -dy / joystickRadius };
+        }
+
+        function onJoystickEnd(e) {
+            joystickActive = false;
+            joystickKnob.style.transform = 'translate(-50%, -50%)';
+            joystickPos = { x: 0, y: 0 };
+        }
 
         function animateCS2() {
             requestAnimationFrame(animateCS2);
             
             const delta = 0.016;
 
-            velocityCS2.y -= 9.8 * 2.0 * delta; // Yerçekimi
+            velocityCS2.y -= 9.8 * 2.0 * delta;
             
-            directionCS2.z = (moveForward || isMovingUp) - (moveBackward || isMovingDown);
-            directionCS2.x = (moveRight || isMovingRight) - (moveLeft || isMovingLeft);
+            if (isMobileDevice()) {
+                directionCS2.z = joystickPos.y;
+                directionCS2.x = joystickPos.x;
+            } else {
+                directionCS2.z = Number(moveForward) - Number(moveBackward);
+                directionCS2.x = Number(moveRight) - Number(moveLeft);
+            }
 
             if (directionCS2.length() > 0) {
                 directionCS2.normalize();
