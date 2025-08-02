@@ -848,7 +848,7 @@
             velocityCS2.y -= 9.8 * 2.0 * delta;
 
             if (isMobileDevice()) {
-                directionCS2.z = -moveJoystickPos.y;
+                directionCS2.z = moveJoystickPos.y; // Hata düzeltildi: İleri-geri hareketi artık doğru yönde
                 directionCS2.x = moveJoystickPos.x;
             } else {
                 directionCS2.z = Number(moveForward) - Number(moveBackward);
