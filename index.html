@@ -292,12 +292,12 @@
             color: #fff;
             border: 2px solid #fff;
             border-radius: 50%;
-            width: 60px;
-            height: 60px;
+            width: 80px; /* Daha büyük */
+            height: 80px; /* Daha büyük */
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 24px;
+            font-size: 32px; /* Daha büyük */
             cursor: pointer;
             user-select: none; /* Seçimi engelleme */
             transition: background-color 0.3s ease, transform 0.1s ease;
@@ -472,15 +472,19 @@
         const otherCars = [];
         const environmentObjects = [];
         
-        let playerSpeed = 0.1;
-        let targetSpeed = 0.1;
+        // HIZ DEĞERLERİ ARTIRILDI
+        let playerSpeed = 0.15;
+        let targetSpeed = 0.15;
+        const maxSpeed = 0.3;
+        const minSpeed = 0.08;
         
         let lateralVelocity = 0;
         const lateralAcceleration = 0.005;
         const lateralDeceleration = 0.02;
         const maxLateralSpeed = 0.05;
 
-        const roadWidth = 4.2;
+        // YOL GENİŞLİĞİ VE ŞERİT SAYISI ARTIRILDI
+        const roadWidth = 6.3;
         const playerXMin = -(roadWidth / 2) + 0.5;
         const playerXMax = (roadWidth / 2) - 0.5;
 
@@ -489,12 +493,9 @@
 
         const loader = new GLTFLoader();
 
-        // GENİŞ AÇILI KAMERA İÇİN DEĞİŞTİRİLEN DEĞERLER
-        // Oyun için FOV'u 90'a çıkardık
+        // GENİŞ AÇILI KAMERA İÇİN DEĞERLER
         const defaultCameraFov = 90;
-        // Kamerayı daha geriye ve yukarıya çektik
         const defaultCameraPosition = new THREE.Vector3(0, 3, 7);
-        // Duraklatma anı için daha da geniş ve geride bir açı belirledik
         const pauseCameraFov = 110;
         const pauseCameraPosition = new THREE.Vector3(0, 5, 10);
         
@@ -523,15 +524,26 @@
                 const lineGeometry = new THREE.BoxGeometry(0.1, 0.1, 1);
                 const lineMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
                 
+                // 6 ŞERİT İÇİN 4 YOL ÇİZGİSİ
                 const line1 = new THREE.Mesh(lineGeometry, lineMaterial);
-                line1.position.set(-0.7, 0.06, i);
+                line1.position.set(-2.1, 0.06, i);
                 scene.add(line1);
                 roadLines.push(line1);
-
+                
                 const line2 = new THREE.Mesh(lineGeometry, lineMaterial);
-                line2.position.set(0.7, 0.06, i);
+                line2.position.set(-0.7, 0.06, i);
                 scene.add(line2);
                 roadLines.push(line2);
+
+                const line3 = new THREE.Mesh(lineGeometry, lineMaterial);
+                line3.position.set(0.7, 0.06, i);
+                scene.add(line3);
+                roadLines.push(line3);
+
+                const line4 = new THREE.Mesh(lineGeometry, lineMaterial);
+                line4.position.set(2.1, 0.06, i);
+                scene.add(line4);
+                roadLines.push(line4);
             }
             window.roadLines = roadLines;
             
@@ -542,7 +554,6 @@
 
             loadModels();
 
-            // Olay dinleyicileri
             document.addEventListener('keydown', onKeyDown);
             document.addEventListener('keyup', onKeyUp);
             window.addEventListener('resize', onResize);
@@ -619,22 +630,30 @@
 
         function spawnEnvironmentObjects() {
             // Ağaçları yerleştir
-            const treeGeometry = new THREE.CylinderGeometry(0.2, 0.2, 2, 8);
-            const treeMaterial = new THREE.MeshLambertMaterial({ color: 0x8b4513 });
+            const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.2, 2, 8);
+            const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x8b4513 });
             const leafGeometry = new THREE.ConeGeometry(1, 2, 8);
             const leafMaterial = new THREE.MeshLambertMaterial({ color: 0x228b22 });
+            const baseGeometry = new THREE.BoxGeometry(2, 0.1, 2);
+            const baseMaterial = new THREE.MeshLambertMaterial({ color: 0x228b22 });
 
             for (let i = 0; i < 50; i++) {
-                const trunk = new THREE.Mesh(treeGeometry, treeMaterial);
+                const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
                 const leaves = new THREE.Mesh(leafGeometry, leafMaterial);
+                const base = new THREE.Mesh(baseGeometry, baseMaterial);
+                
                 leaves.position.y = 1.5;
+                trunk.position.y = 1;
+                base.position.y = 0.05;
+
                 const tree = new THREE.Group();
                 tree.add(trunk);
                 tree.add(leaves);
+                tree.add(base);
 
                 const zPosition = -Math.random() * 800 - 20;
                 const xPosition = (Math.random() > 0.5 ? 1 : -1) * (roadWidth / 2 + 1 + Math.random() * 5);
-                tree.position.set(xPosition, 0.5, zPosition);
+                tree.position.set(xPosition, 0, zPosition);
                 scene.add(tree);
                 environmentObjects.push(tree);
             }
@@ -656,16 +675,16 @@
             if (gameRunning) return;
             gameRunning = true;
             score = 0;
-            playerSpeed = 0.1;
-            targetSpeed = 0.1;
+            playerSpeed = 0.15;
+            targetSpeed = 0.15;
             gameOverText.style.display = 'none';
             pauseButton.innerText = 'Duraklat';
             isPaused = false;
             
             otherCars.forEach(car => {
-                const lane = Math.floor(Math.random() * 4) - 1.5; // 4 şerit için rastgele konum
+                const laneIndex = Math.floor(Math.random() * 6) - 2.5;
                 const zPosition = -Math.random() * 200 - 20;
-                car.position.set(lane, 0.25, zPosition);
+                car.position.set(laneIndex, 0.25, zPosition);
             });
 
             environmentObjects.forEach(obj => {
@@ -688,9 +707,9 @@
                 } else {
                     car = obstacleCarModel.clone();
                 }
-                const lane = Math.floor(Math.random() * 4) - 1.5; // 4 şerit için konumlandırma
+                const laneIndex = Math.floor(Math.random() * 6) - 2.5; // 6 şerit için konumlandırma
                 const zPosition = -Math.random() * 200 - 20;
-                car.position.set(lane, 0.25, zPosition);
+                car.position.set(laneIndex, 0.25, zPosition);
                 scene.add(car);
                 otherCars.push(car);
             }
@@ -725,9 +744,9 @@
             } else if (event.key === 'ArrowRight') {
                 lateralVelocity = maxLateralSpeed;
             } else if (event.key === 'ArrowUp') {
-                targetSpeed = 0.2;
+                targetSpeed = maxSpeed;
             } else if (event.key === 'ArrowDown') {
-                targetSpeed = 0.05;
+                targetSpeed = minSpeed;
             }
         }
 
@@ -736,7 +755,7 @@
             if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
                 lateralVelocity = 0;
             } else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
-                targetSpeed = 0.1;
+                targetSpeed = playerSpeed;
             }
         }
         
@@ -747,9 +766,9 @@
             } else if (direction === 'right') {
                 lateralVelocity = maxLateralSpeed;
             } else if (direction === 'gas') {
-                targetSpeed = 0.2;
+                targetSpeed = maxSpeed;
             } else if (direction === 'brake') {
-                targetSpeed = 0.05;
+                targetSpeed = minSpeed;
             }
         }
 
@@ -758,7 +777,7 @@
             if (direction === 'left' || direction === 'right') {
                 lateralVelocity = 0;
             } else if (direction === 'gas' || direction === 'brake') {
-                targetSpeed = 0.1;
+                targetSpeed = playerSpeed;
             }
         }
 
@@ -785,9 +804,9 @@
             otherCars.forEach(car => {
                 car.position.z += moveDistance;
                 if (car.position.z > camera.position.z + 10) {
-                    const lane = Math.floor(Math.random() * 4) - 1.5;
+                    const laneIndex = Math.floor(Math.random() * 6) - 2.5;
                     const zPosition = -Math.random() * 200 - 20;
-                    car.position.set(lane, 0.25, zPosition);
+                    car.position.set(laneIndex, 0.25, zPosition);
                 }
             });
             
