@@ -349,6 +349,8 @@
 
     <script type="module">
         import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.126.0/build/three.module.js';
+        // GLTFLoader'ı import ediyoruz, bu sayede 3D modelleri yükleyebiliriz
+        import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.126.0/examples/jsm/loaders/GLTFLoader.js';
 
         const gameContainer = document.getElementById('game-container');
         const scoreElement = document.getElementById('score-3d');
@@ -356,19 +358,26 @@
         
         let scene, camera, renderer, playerCar, road, gameRunning = false, score = 0;
         const otherCars = [];
-        let playerSpeed = 0.05; // Oyuncu araba hızı
-        let spawnInterval = 1000;
+        let playerSpeed = 0.1;
+        
+        // Bu, 3D modelin URL'si. Bu modelin sunucuda doğru konumda olması gerekir.
+        // Şimdilik, kullanabileceğin hazır bir link veriyorum.
+        const playerCarModelUrl = 'https://cdn.rawgit.com/donmccurdy/three-gltf-viewer/f395079a/examples/models/gltf/car/scene.gltf';
+        const obstacleCarModelUrl = 'https://cdn.rawgit.com/donmccurdy/three-gltf-viewer/f395079a/examples/models/gltf/car/scene.gltf';
+        let playerCarModel, obstacleCarModel;
+
+        const loader = new GLTFLoader();
 
         function init() {
             // Sahne
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87ceeb); // Gökyüzü rengi
+            scene.background = new THREE.Color(0x87ceeb);
 
             // Kamera
             camera = new THREE.PerspectiveCamera(75, gameContainer.clientWidth / gameContainer.clientHeight, 0.1, 1000);
             camera.position.z = 5;
             camera.position.y = 2;
-            camera.rotation.x = -Math.PI / 8; // Kamerayı hafifçe aşağı eğ
+            camera.rotation.x = -Math.PI / 8;
 
             // Işıklandırma
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -384,10 +393,10 @@
             gameContainer.appendChild(renderer.domElement);
 
             // Yol
-            const roadGeometry = new THREE.BoxGeometry(3.2, 0.1, 1000); // Yolun uzunluğunu artırdık
+            const roadGeometry = new THREE.BoxGeometry(3.2, 0.1, 1000);
             const roadMaterial = new THREE.MeshLambertMaterial({ color: 0x4a6566 });
             road = new THREE.Mesh(roadGeometry, roadMaterial);
-            road.position.z = -500; // Yolun başlangıcını geriye çektik
+            road.position.z = -500;
             scene.add(road);
 
             // Yol şeritleri
@@ -402,12 +411,8 @@
             }
             window.roadLines = roadLines;
 
-            // Oyuncu araba
-            const playerGeometry = new THREE.BoxGeometry(0.5, 0.5, 1);
-            const playerMaterial = new THREE.MeshLambertMaterial({ color: 0x27ae60 });
-            playerCar = new THREE.Mesh(playerGeometry, playerMaterial);
-            playerCar.position.set(0, 0.25, 4);
-            scene.add(playerCar);
+            // 3D modelleri yükle ve sonra oyunu başlat
+            loadModels();
 
             // Olay dinleyicileri
             document.addEventListener('keydown', onKeyDown);
@@ -417,44 +422,58 @@
             // Dokunmatik kontrol için olay dinleyicileri
             gameContainer.addEventListener('touchstart', onTouchStart);
             gameContainer.addEventListener('touchend', onTouchEnd);
-            
-            spawnInitialCars();
         }
 
-        // Oyun başladığında sabit duran engelleri oluşturma
-        function spawnInitialCars() {
-            const carGeometry = new THREE.BoxGeometry(0.5, 0.5, 1);
-            const carMaterials = [
-                new THREE.MeshLambertMaterial({ color: 0xe74c3c }),
-                new THREE.MeshLambertMaterial({ color: 0x3498db }),
-                new THREE.MeshLambertMaterial({ color: 0xf1c40f }),
-            ];
-            
-            for (let i = 0; i < 20; i++) {
-                const car = new THREE.Mesh(carGeometry, carMaterials[Math.floor(Math.random() * carMaterials.length)]);
-                const lane = Math.floor(Math.random() * 3) - 1; // -1, 0, 1
-                const zPosition = -i * 10 - 20; // Engelleri biraz daha geride başlatıyoruz
-                car.position.set(lane, 0.25, zPosition);
-                scene.add(car);
-                otherCars.push(car);
-            }
-        }
+        function loadModels() {
+            // Oyuncu arabasını yükle
+            loader.load(playerCarModelUrl, function(gltf) {
+                playerCarModel = gltf.scene;
+                playerCarModel.scale.set(0.2, 0.2, 0.2); // Modelin boyutunu ayarladık
+                playerCarModel.position.set(0, 0.25, 4);
+                playerCarModel.rotation.y = Math.PI; // Arabayı bize doğru çevir
+                scene.add(playerCarModel);
+                playerCar = playerCarModel; // oyuncu arabasına atama yaptık
 
+                // Engel arabasını yükle
+                loader.load(obstacleCarModelUrl, function(gltf2) {
+                    obstacleCarModel = gltf2.scene;
+                    spawnInitialCars();
+                    animate(); // Modeller yüklendikten sonra animasyonu başlat
+                });
+            }, undefined, function(error) {
+                console.error(error);
+            });
+        }
+        
         function startGame() {
             if (gameRunning) return;
             gameRunning = true;
             score = 0;
-            playerSpeed = 0.05;
+            playerSpeed = 0.1;
             gameOverText.style.display = 'none';
             
             // Yeniden başlamak için arabaların pozisyonunu resetle
             otherCars.forEach((car, index) => {
                 const lane = Math.floor(Math.random() * 3) - 1;
-                const zPosition = -index * 10 - 20; // Yeni konumlarını ayarla
+                const zPosition = -index * 10 - 20;
                 car.position.set(lane, 0.25, zPosition);
             });
             
             animate();
+        }
+
+        // Engel arabalarını oluşturma
+        function spawnInitialCars() {
+            for (let i = 0; i < 20; i++) {
+                const car = obstacleCarModel.clone();
+                car.scale.set(0.2, 0.2, 0.2);
+                car.rotation.y = Math.PI;
+                const lane = Math.floor(Math.random() * 3) - 1;
+                const zPosition = -i * 10 - 20;
+                car.position.set(lane, 0.25, zPosition);
+                scene.add(car);
+                otherCars.push(car);
+            }
         }
 
         function onKeyDown(event) {
@@ -482,20 +501,16 @@
         }
 
         function onTouchEnd(event) {
-            // Dokunmayı bıraktığında herhangi bir şey yapmasına gerek yok
+            // Dokunmayı bıraktığında bir şey yapmasına gerek yok
         }
 
         function update() {
             if (!gameRunning) return;
             
-            // Kamera ve oyuncu arabasını sabit bir z pozisyonunda tutuyoruz
-            // Böylece yolun geri kaymasıyla hareket hissi oluşacak.
             const moveDistance = playerSpeed;
-            
-            // Hızı artır
-            playerSpeed += 0.00001;
+            playerSpeed += 0.00005;
 
-            // Yol şeritlerini ve engelleri oyuncunun hareketine göre geri çek
+            // Yol ve engellerin hareketini sağla
             road.position.z += moveDistance;
             if(road.position.z > 0) road.position.z = -500;
             
@@ -508,17 +523,14 @@
 
             otherCars.forEach(car => {
                 car.position.z += moveDistance;
-                // Arabalar kameranın arkasına geçtiğinde yenisi gibi konumlandır
                 if (car.position.z > camera.position.z + 10) {
                     const lane = Math.floor(Math.random() * 3) - 1;
-                    car.position.set(lane, 0.25, -200); // Yeniden uzakta bir konum belirle
+                    car.position.set(lane, 0.25, -200);
                 }
             });
 
-            // Çarpışma kontrolü
             checkCollisions();
 
-            // Puanı güncelle
             score += moveDistance * 10;
             scoreElement.innerText = Math.floor(score);
         }
@@ -526,9 +538,9 @@
         function checkCollisions() {
             const playerBox = new THREE.Box3().setFromObject(playerCar);
             otherCars.forEach(car => {
+                // Engel arabasının boyutlarını doğru şekilde almak için modelin kendisini kullanıyoruz
                 const carBox = new THREE.Box3().setFromObject(car);
                 if (playerBox.intersectsBox(carBox)) {
-                    // Çarpışma oldu
                     gameRunning = false;
                     gameOverText.style.display = 'block';
                 }
