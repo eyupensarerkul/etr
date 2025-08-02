@@ -331,7 +331,7 @@
         <section id="game-3d" style="text-align: center; padding: 40px 0; background-color: #f0f2f5;">
             <div class="container">
                 <h2>3D Araba Sollama Oyunu</h2>
-                <p>Oynamak için tuvale tıkla. Klavyedeki sağ ve sol ok tuşlarıyla arabanı kontrol et!</p>
+                <p>Oynamak için tuvale tıkla. Klavyedeki sağ ve sol ok tuşlarıyla veya telefonunda ekranın sağına ve soluna dokunarak arabanı kontrol et!</p>
                 <div id="game-container" style="width: 100%; height: 500px; max-width: 800px; margin: 0 auto; border: 5px solid #2c3e50; border-radius: 10px;"></div>
                 <div style="margin-top: 15px; font-size: 1.2em; font-weight: bold;">
                     <p>Puan: <span id="score-3d">0</span></p>
@@ -358,7 +358,6 @@
         const otherCars = [];
         let playerSpeed = 0.05; // Oyuncu araba hızı
         let spawnInterval = 1000;
-        let lastSpawnTime = 0;
 
         function init() {
             // Sahne
@@ -392,7 +391,6 @@
             scene.add(road);
 
             // Yol şeritleri
-            // Bu kısımda şeritlerin hareketini sağlamak için onları bir diziye ekleyip güncelleyeceğiz.
             const roadLines = [];
             for (let i = -500; i < 500; i += 2) {
                 const lineGeometry = new THREE.BoxGeometry(0.1, 0.1, 1);
@@ -402,7 +400,7 @@
                 scene.add(line);
                 roadLines.push(line);
             }
-            window.roadLines = roadLines; // Global olarak erişebilmek için
+            window.roadLines = roadLines;
 
             // Oyuncu araba
             const playerGeometry = new THREE.BoxGeometry(0.5, 0.5, 1);
@@ -416,13 +414,15 @@
             window.addEventListener('resize', onResize);
             gameContainer.addEventListener('click', startGame);
             
-            // Başlangıçta sabit engelleri oluşturalım
+            // Dokunmatik kontrol için olay dinleyicileri
+            gameContainer.addEventListener('touchstart', onTouchStart);
+            gameContainer.addEventListener('touchend', onTouchEnd);
+            
             spawnInitialCars();
         }
 
         // Oyun başladığında sabit duran engelleri oluşturma
         function spawnInitialCars() {
-            // Araba yaratma mantığı tamamen değişti. Sabit duran engeller oluşturacağız.
             const carGeometry = new THREE.BoxGeometry(0.5, 0.5, 1);
             const carMaterials = [
                 new THREE.MeshLambertMaterial({ color: 0xe74c3c }),
@@ -433,7 +433,7 @@
             for (let i = 0; i < 20; i++) {
                 const car = new THREE.Mesh(carGeometry, carMaterials[Math.floor(Math.random() * carMaterials.length)]);
                 const lane = Math.floor(Math.random() * 3) - 1; // -1, 0, 1
-                const zPosition = -i * 10; // Her bir arabayı 10 birim arayla yerleştir
+                const zPosition = -i * 10 - 20; // Engelleri biraz daha geride başlatıyoruz
                 car.position.set(lane, 0.25, zPosition);
                 scene.add(car);
                 otherCars.push(car);
@@ -446,7 +446,6 @@
             score = 0;
             playerSpeed = 0.05;
             gameOverText.style.display = 'none';
-            playerCar.position.x = 0;
             
             // Yeniden başlamak için arabaların pozisyonunu resetle
             otherCars.forEach((car, index) => {
@@ -468,30 +467,49 @@
             }
         }
 
+        // Dokunmatik kontrol fonksiyonları
+        function onTouchStart(event) {
+            if (!gameRunning || event.touches.length === 0) return;
+            const touchX = event.touches[0].clientX;
+            const screenWidth = window.innerWidth;
+            const moveDistance = 0.5;
+
+            if (touchX < screenWidth / 2 && playerCar.position.x > -1) {
+                playerCar.position.x -= moveDistance;
+            } else if (touchX > screenWidth / 2 && playerCar.position.x < 1) {
+                playerCar.position.x += moveDistance;
+            }
+        }
+
+        function onTouchEnd(event) {
+            // Dokunmayı bıraktığında herhangi bir şey yapmasına gerek yok
+        }
+
         function update() {
             if (!gameRunning) return;
             
-            // Oyuncu arabasını ileri hareket ettir
-            playerCar.position.z -= playerSpeed;
+            // Kamera ve oyuncu arabasını sabit bir z pozisyonunda tutuyoruz
+            // Böylece yolun geri kaymasıyla hareket hissi oluşacak.
+            const moveDistance = playerSpeed;
             
             // Hızı artır
             playerSpeed += 0.00001;
 
             // Yol şeritlerini ve engelleri oyuncunun hareketine göre geri çek
-            road.position.z += playerSpeed;
+            road.position.z += moveDistance;
             if(road.position.z > 0) road.position.z = -500;
             
             window.roadLines.forEach(line => {
-                line.position.z += playerSpeed;
-                if(line.position.z > camera.position.z) {
+                line.position.z += moveDistance;
+                if(line.position.z > camera.position.z + 10) {
                     line.position.z -= 1000;
                 }
             });
 
             otherCars.forEach(car => {
-                car.position.z += playerSpeed;
+                car.position.z += moveDistance;
                 // Arabalar kameranın arkasına geçtiğinde yenisi gibi konumlandır
-                if (car.position.z > camera.position.z) {
+                if (car.position.z > camera.position.z + 10) {
                     const lane = Math.floor(Math.random() * 3) - 1;
                     car.position.set(lane, 0.25, -200); // Yeniden uzakta bir konum belirle
                 }
@@ -501,7 +519,7 @@
             checkCollisions();
 
             // Puanı güncelle
-            score += playerSpeed * 10;
+            score += moveDistance * 10;
             scoreElement.innerText = Math.floor(score);
         }
 
