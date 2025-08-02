@@ -3,889 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Oyunlar</title>
+    <title>Canlı Sohbet Odaları</title>
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; font-family: Arial, sans-serif; background-color: #2c3e50; color: #ecf0f1; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-        .game-wrapper { display: flex; flex-direction: row; justify-content: center; gap: 20px; width: 100%; height: 100%; max-height: 800px; padding: 10px; box-sizing: border-box; }
-        .game-container { position: relative; width: 50%; height: 100%; max-width: 800px; background-color: #34495e; border-radius: 10px; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        .game-info { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #fff; font-size: 1.5em; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
-        .score-display, .targets-left, .game-status { position: absolute; top: 10px; left: 10px; padding: 5px 10px; background-color: rgba(0,0,0,0.5); border-radius: 5px; font-size: 1.2em; z-index: 10; }
-        .game-status { bottom: 10px; top: auto; left: 50%; transform: translateX(-50%); text-align: center; display: none; }
-        #cs2-targets-left { top: 10px; right: 10px; left: auto; }
-        #gameOverText-3d { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #e74c3c; font-size: 3em; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); z-index: 10; }
-        .controls-wrapper { position: absolute; bottom: 10px; left: 10px; right: 10px; display: none; justify-content: space-between; align-items: center; z-index: 100; }
-        .button { width: 60px; height: 60px; border-radius: 50%; background-color: rgba(44, 62, 80, 0.7); color: #fff; border: none; font-size: 1.5em; line-height: 60px; text-align: center; user-select: none; }
-        .joystick-container { position: relative; width: 150px; height: 150px; background-color: rgba(44, 62, 80, 0.5); border-radius: 50%; }
-        .joystick-knob { position: absolute; top: 50%; left: 50%; width: 60px; height: 60px; border-radius: 50%; background-color: rgba(189, 195, 199, 0.9); transform: translate(-50%, -50%); }
-        #cs2-look-panel { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 99; }
-        #cs2-game-controls { display: none; position: absolute; bottom: 10px; left: 10px; right: 10px; justify-content: space-between; align-items: flex-end; z-index: 100; }
-        .cs2-buttons { display: flex; flex-direction: column; gap: 10px; }
-        .car-buttons { position: absolute; bottom: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; z-index: 100; }
-        .car-buttons .button-group { display: flex; gap: 10px; }
-        #fullscreen-button, #pause-button { position: absolute; top: 10px; right: 10px; width: 50px; height: 50px; border-radius: 50%; background-color: rgba(44, 62, 80, 0.7); color: #fff; border: none; font-size: 1em; line-height: 50px; text-align: center; z-index: 101; }
-        @media (max-width: 768px) {
-            .game-wrapper { flex-direction: column; align-items: center; }
-            .game-container { width: 95%; height: 50%; max-height: 400px; }
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #2c3e50; color: #ecf0f1; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .chat-container { width: 90%; max-width: 600px; background-color: #34495e; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); display: flex; flex-direction: column; overflow: hidden; height: 80vh; }
+        .join-panel { padding: 20px; text-align: center; }
+        .chat-header { padding: 15px; background-color: #2980b9; color: white; text-align: center; font-size: 1.2em; }
+        .chat-messages { flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .chat-message { background-color: #2c3e50; padding: 10px; border-radius: 5px; word-wrap: break-word; }
+        .chat-input-form { display: flex; padding: 15px; border-top: 1px solid #4a667d; }
+        #chat-input { flex-grow: 1; padding: 10px; border: none; border-radius: 5px; background-color: #4a667d; color: white; }
+        #chat-input:focus { outline: none; }
+        #chat-form button { padding: 10px 15px; border: none; background-color: #2980b9; color: white; border-radius: 5px; cursor: pointer; margin-left: 10px; }
+        .hidden { display: none; }
+        input, select { padding: 10px; margin: 5px; border-radius: 5px; border: 1px solid #4a667d; background-color: #4a667d; color: #ecf0f1; }
+        #room-select { width: 100%; }
+        .username-span { font-weight: bold; color: #f1c40f; }
     </style>
+    <script src="https://js.pusher.com/8.0.1/pusher.min.js"></script>
 </head>
 <body>
-    <div class="game-wrapper">
-        <div id="game-container-car" class="game-container">
-            <div class="game-info" id="car-game-info">Oynamak için Tıklayın</div>
-            <div class="score-display">Puan: <span id="score-3d">0</span></div>
-            <div id="gameOverText-3d">GAME OVER!</div>
-            <button id="fullscreen-button">Tam Ekran</button>
-            <button id="pause-button">Duraklat</button>
-            <div class="car-buttons">
-                <div class="button-group">
-                    <button id="left-button" class="button">&#8592;</button>
-                    <button id="right-button" class="button">&#8594;</button>
-                </div>
-                <div class="button-group">
-                    <button id="gas-button" class="button">&#9650;</button>
-                    <button id="brake-button" class="button">&#9660;</button>
-                </div>
-            </div>
+    <div class="chat-container">
+        <div id="join-container" class="join-panel">
+            <h2>Sohbete Katıl</h2>
+            <input type="text" id="username-input" placeholder="Kullanıcı adınızı girin" required>
+            <select id="room-select">
+                <option value="genel">Genel Sohbet</option>
+                <option value="oyun">Oyun Odası</option>
+                <option value="yazilim">Yazılım</option>
+                <option value="muhabbet">Muhabbet Odası</option>
+            </select>
+            <button id="join-button">Odaya Katıl</button>
         </div>
 
-        <div id="cs2-game-container" class="game-container">
-            <div class="game-info" id="cs2-game-info">Oynamak için Tıklayın</div>
-            <div class="score-display">Puan: <span id="cs2-score">0</span></div>
-            <div class="targets-left">Hedef: <span id="cs2-targets-left">10</span></div>
-            <div class="game-status" id="cs2-game-status"></div>
-            <div id="cs2-look-panel"></div>
-            <div id="cs2-game-controls">
-                <div id="cs2-joystick-container" class="joystick-container">
-                    <div id="cs2-joystick-knob" class="joystick-knob"></div>
-                </div>
-                <div class="cs2-buttons">
-                    <button id="jump-button" class="button">Zıpla</button>
-                    <button id="fire-button" class="button">Ateş Et</button>
-                </div>
-            </div>
+        <div id="chat-container-inner" class="hidden">
+            <div id="chat-header" class="chat-header">Oda: <span id="current-room"></span></div>
+            <div id="chat-messages" class="chat-messages"></div>
+            <form id="chat-form" class="chat-input-form">
+                <input id="chat-input" type="text" placeholder="Mesajınızı yazın..." autocomplete="off" />
+                <button>Gönder</button>
+            </form>
         </div>
     </div>
-    <footer>
-        <div class="container">
-            <p>&copy; 2025 Eyüp Ensar Erkul. Tüm Hakları Saklıdır.</p>
-        </div>
-    </footer>
 
-    <script type="module">
-        import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.126.0/build/three.module.js';
+    <script>
+        const joinButton = document.getElementById('join-button');
+        const usernameInput = document.getElementById('username-input');
+        const roomSelect = document.getElementById('room-select');
+        const joinContainer = document.getElementById('join-container');
+        const chatContainerInner = document.getElementById('chat-container-inner');
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const chatMessages = document.getElementById('chat-messages');
+        const currentRoomDisplay = document.getElementById('current-room');
+        
+        let username;
+        let room;
+        let pusher;
+        let channel;
 
-        // ARABA OYUNU KODU BURADA
-        const gameContainerCar = document.getElementById('game-container-car');
-        const scoreElement = document.getElementById('score-3d');
-        const gameOverText = document.getElementById('gameOverText-3d');
-        const fullscreenButton = document.getElementById('fullscreen-button');
-        const pauseButton = document.getElementById('pause-button');
-
-        const leftButtonCar = document.getElementById('left-button');
-        const rightButtonCar = document.getElementById('right-button');
-        const gasButton = document.getElementById('gas-button');
-        const brakeButton = document.getElementById('brake-button');
-
-        let sceneCar, cameraCar, rendererCar, playerCar, gameRunning = false, score = 0, isPaused = false;
-        const otherCars = [];
-        const environmentObjects = [];
-        const roadChunks = [];
-
-        let playerSpeed = 0.15;
-        let targetSpeed = 0.15;
-        const maxSpeed = 0.3;
-        const minSpeed = 0.08;
-
-        let lateralVelocity = 0;
-        let lateralAcceleration = 0.005;
-        const maxLateralAcceleration = 0.01;
-        let maxLateralSpeed = 0.05;
-        const maxMaxLateralSpeed = 0.1;
-
-        const roadWidth = 6.3;
-        const playerXMin = -(roadWidth / 2) + 0.5;
-        const playerXMax = (roadWidth / 2) - 0.5;
-
-        const spawnDistance = 50;
-        const despawnDistance = 10;
-
-        const roadChunkSize = 100;
-
-        const defaultCameraFov = 90;
-        const defaultCameraPosition = new THREE.Vector3(0, 3, 10);
-        const pauseCameraFov = 110;
-        const pauseCameraPosition = new THREE.Vector3(0, 5, 12);
-
-        function initCarGame() {
-            sceneCar = new THREE.Scene();
-            sceneCar.background = new THREE.Color(0x87ceeb);
-
-            cameraCar = new THREE.PerspectiveCamera(defaultCameraFov, gameContainerCar.clientWidth / gameContainerCar.clientHeight, 0.1, 1000);
-            cameraCar.position.copy(defaultCameraPosition);
-            cameraCar.rotation.x = -Math.PI / 8;
-
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-            sceneCar.add(ambientLight);
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(0, 10, 5);
-            sceneCar.add(directionalLight);
-
-            playerCar = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 1), new THREE.MeshLambertMaterial({ color: 0x27ae60 }));
-            playerCar.position.set(0, 0.25, 4);
-            sceneCar.add(playerCar);
-
-            rendererCar = new THREE.WebGLRenderer({ antialias: true });
-            rendererCar.setSize(gameContainerCar.clientWidth, gameContainerCar.clientHeight);
-            rendererCar.setPixelRatio(window.devicePixelRatio);
-            gameContainerCar.appendChild(rendererCar.domElement);
-
-            createInitialRoad();
-            spawnInitialCars();
-            spawnInitialEnvironmentObjects();
-
-            document.addEventListener('keydown', onKeyDownCar);
-            document.addEventListener('keyup', onKeyUpCar);
-            window.addEventListener('resize', onResizeCar);
-            gameContainerCar.addEventListener('click', startGameCar);
-
-            leftButtonCar.addEventListener('touchstart', (e) => { e.preventDefault(); onButtonPressCar('left'); });
-            rightButtonCar.addEventListener('touchstart', (e) => { e.preventDefault(); onButtonPressCar('right'); });
-            gasButton.addEventListener('touchstart', (e) => { e.preventDefault(); onButtonPressCar('gas'); });
-            brakeButton.addEventListener('touchstart', (e) => { e.preventDefault(); onButtonPressCar('brake'); });
-
-            leftButtonCar.addEventListener('touchend', (e) => { e.preventDefault(); onButtonReleaseCar('left'); });
-            rightButtonCar.addEventListener('touchend', (e) => { e.preventDefault(); onButtonReleaseCar('right'); });
-            gasButton.addEventListener('touchend', (e) => { e.preventDefault(); onButtonReleaseCar('gas'); });
-            brakeButton.addEventListener('touchend', (e) => { e.preventDefault(); onButtonReleaseCar('brake'); });
-
-            leftButtonCar.addEventListener('mousedown', () => onButtonPressCar('left'));
-            leftButtonCar.addEventListener('mouseup', () => onButtonReleaseCar('left'));
-            leftButtonCar.addEventListener('mouseout', () => onButtonReleaseCar('left'));
-            rightButtonCar.addEventListener('mousedown', () => onButtonPressCar('right'));
-            rightButtonCar.addEventListener('mouseup', () => onButtonReleaseCar('right'));
-            rightButtonCar.addEventListener('mouseout', () => onButtonReleaseCar('right'));
-            gasButton.addEventListener('mousedown', () => onButtonPressCar('gas'));
-            gasButton.addEventListener('mouseup', () => onButtonReleaseCar('gas'));
-            gasButton.addEventListener('mouseout', () => onButtonReleaseCar('gas'));
-            brakeButton.addEventListener('mousedown', () => onButtonPressCar('brake'));
-            brakeButton.addEventListener('mouseup', () => onButtonReleaseCar('brake'));
-            brakeButton.addEventListener('mouseout', () => onButtonReleaseCar('brake'));
-
-            fullscreenButton.addEventListener('click', toggleFullscreenCar);
-            pauseButton.addEventListener('click', togglePauseCar);
-
-            animateCarGame();
-        }
-
-        function createRoadChunk(positionZ) {
-            const chunk = new THREE.Group();
-            const roadGeometry = new THREE.BoxGeometry(roadWidth, 0.1, roadChunkSize);
-            const roadMaterial = new THREE.MeshLambertMaterial({ color: 0x4a6566 });
-            const roadMesh = new THREE.Mesh(roadGeometry, roadMaterial);
-            roadMesh.position.z = positionZ;
-            chunk.add(roadMesh);
-            const lineGeometry = new THREE.BoxGeometry(0.1, 0.1, 1);
-            const lineMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
-            for (let i = positionZ - roadChunkSize / 2; i < positionZ + roadChunkSize / 2; i += 2) {
-                const line1 = new THREE.Mesh(lineGeometry, lineMaterial);
-                line1.position.set(-2.1, 0.06, i);
-                chunk.add(line1);
-                const line2 = new THREE.Mesh(lineGeometry, lineMaterial);
-                line2.position.set(-0.7, 0.06, i);
-                chunk.add(line2);
-                const line3 = new THREE.Mesh(lineGeometry, lineMaterial);
-                line3.position.set(0.7, 0.06, i);
-                chunk.add(line3);
-                const line4 = new THREE.Mesh(lineGeometry, lineMaterial);
-                line4.position.set(2.1, 0.06, i);
-                chunk.add(line4);
-            }
-            return chunk;
-        }
-
-        function createInitialRoad() {
-            for(let i = -3; i < 3; i++) {
-                const chunk = createRoadChunk(i * roadChunkSize);
-                sceneCar.add(chunk);
-                roadChunks.push(chunk);
-            }
-        }
-
-        function createBillboardTexture(text) {
-            const canvas = document.createElement('canvas');
-            canvas.width = 512;
-            canvas.height = 256;
-            const context = canvas.getContext('2d');
-            context.fillStyle = '#2c3e50';
-            context.fillRect(0, 0, canvas.width, canvas.height);
-            context.font = 'bold 48px Arial';
-            context.fillStyle = '#1abc9c';
-            context.textAlign = 'center';
-            context.textBaseline = 'middle';
-            context.fillText(text, canvas.width / 2, canvas.height / 2);
-            return new THREE.CanvasTexture(canvas);
-        }
-
-        function createTree() {
-            const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.2, 2, 8);
-            const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x8b4513 });
-            const leafGeometry = new THREE.ConeGeometry(1, 2, 8);
-            const leafMaterial = new THREE.MeshLambertMaterial({ color: 0x228b22 });
-            const baseGeometry = new THREE.BoxGeometry(2, 0.1, 2);
-            const baseMaterial = new THREE.MeshLambertMaterial({ color: 0x228b22 });
-
-            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-            const leaves = new THREE.Mesh(leafGeometry, leafMaterial);
-            const base = new THREE.Mesh(baseGeometry, baseMaterial);
-
-            leaves.position.y = 1.5;
-            trunk.position.y = 1;
-            base.position.y = 0.05;
-
-            const tree = new THREE.Group();
-            tree.add(trunk);
-            tree.add(leaves);
-            tree.add(base);
-            return tree;
-        }
-
-        function createBillboard() {
-            const billboardGeometry = new THREE.BoxGeometry(4, 2, 0.2);
-            const billboardTexture = createBillboardTexture('Eyvallah Turkish Restaurant');
-            const billboardMaterial = new THREE.MeshBasicMaterial({ map: billboardTexture });
-            const billboardMesh = new THREE.Mesh(billboardGeometry, billboardMaterial);
-            billboardMesh.position.y = 2;
-            return billboardMesh;
-        }
-
-        function spawnInitialCars() {
-            for (let i = 0; i < 20; i++) {
-                spawnNewCar();
-            }
-        }
-
-        function spawnNewCar() {
-            const car = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 1), new THREE.MeshLambertMaterial({ color: Math.random() * 0xffffff }));
-            const laneIndex = (Math.floor(Math.random() * 6) - 2.5) * 1.4;
-            const zPosition = cameraCar.position.z - spawnDistance - Math.random() * 50;
-            car.position.set(laneIndex, 0.25, zPosition);
-            car.speed = (Math.random() * 0.1) + 0.05;
-            sceneCar.add(car);
-            otherCars.push(car);
-        }
-
-        function spawnInitialEnvironmentObjects() {
-            for (let i = 0; i < 50; i++) {
-                spawnNewEnvironmentObject();
-            }
-        }
-
-        function spawnNewEnvironmentObject() {
-            let obj;
-            if (Math.random() > 0.9) {
-                obj = createBillboard();
-                obj.position.x = (Math.random() > 0.5 ? 1 : -1) * (roadWidth / 2 + 3);
-            } else {
-                obj = createTree();
-                obj.position.x = (Math.random() > 0.5 ? 1 : -1) * (roadWidth / 2 + 1 + Math.random() * 5);
-            }
-            obj.position.z = cameraCar.position.z - spawnDistance - Math.random() * 100;
-            sceneCar.add(obj);
-            environmentObjects.push(obj);
-        }
-
-        function startGameCar() {
-            if (gameRunning) return;
-            gameRunning = true;
-            score = 0;
-            playerSpeed = 0.15;
-            targetSpeed = 0.15;
-            lateralAcceleration = 0.005;
-            maxLateralSpeed = 0.05;
-            gameOverText.style.display = 'none';
-            pauseButton.innerText = 'Duraklat';
-            isPaused = false;
-
-            otherCars.forEach(car => {
-                car.position.z = cameraCar.position.z - spawnDistance - Math.random() * 50;
-                car.speed = (Math.random() * 0.1) + 0.05;
-            });
-
-            environmentObjects.forEach(obj => {
-                obj.position.z = cameraCar.position.z - spawnDistance - Math.random() * 100;
-            });
-
-            animateCarGame();
-        }
-
-        function togglePauseCar() {
-            if (!gameRunning) return;
-            isPaused = !isPaused;
-            if (isPaused) {
-                pauseButton.innerText = 'Devam Et';
-                cameraCar.fov = pauseCameraFov;
-                cameraCar.position.copy(pauseCameraPosition);
-                cameraCar.updateProjectionMatrix();
-            } else {
-                pauseButton.innerText = 'Duraklat';
-                cameraCar.fov = defaultCameraFov;
-                cameraCar.position.copy(defaultCameraPosition);
-                cameraCar.updateProjectionMatrix();
-                animateCarGame();
-            }
-        }
-
-        function onKeyDownCar(event) {
-            if (!gameRunning) return;
-            if (event.key === 'p' || event.key === 'P') {
-                togglePauseCar();
-            }
-            if (isPaused) return;
-
-            if (event.key === 'ArrowLeft') {
-                lateralVelocity = -maxLateralSpeed;
-            } else if (event.key === 'ArrowRight') {
-                lateralVelocity = maxLateralSpeed;
-            } else if (event.key === 'ArrowUp') {
-                targetSpeed = maxSpeed;
-            } else if (event.key === 'ArrowDown') {
-                targetSpeed = minSpeed;
-            }
-        }
-
-        function onKeyUpCar(event) {
-            if (!gameRunning || isPaused) return;
-            if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-                lateralVelocity = 0;
-            } else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
-                targetSpeed = playerSpeed;
-            }
-        }
-
-        function onButtonPressCar(direction) {
-            if (!gameRunning || isPaused) return;
-            if (direction === 'left') {
-                lateralVelocity = -maxLateralSpeed;
-            } else if (direction === 'right') {
-                lateralVelocity = maxLateralSpeed;
-            } else if (direction === 'gas') {
-                targetSpeed = maxSpeed;
-            } else if (direction === 'brake') {
-                targetSpeed = minSpeed;
-            }
-        }
-
-        function onButtonReleaseCar(direction) {
-            if (!gameRunning || isPaused) return;
-            if (direction === 'left' || direction === 'right') {
-                lateralVelocity = 0;
-            } else if (direction === 'gas' || direction === 'brake') {
-                targetSpeed = playerSpeed;
-            }
-        }
-
-        function updateCarGame() {
-            if (!gameRunning || isPaused) return;
-
-            playerSpeed += (targetSpeed - playerSpeed) * 0.05;
-
-            lateralAcceleration = Math.min(lateralAcceleration + 0.000005, maxLateralAcceleration);
-            maxLateralSpeed = Math.min(maxLateralSpeed + 0.000005, maxMaxLateralSpeed);
-
-            playerCar.position.x += lateralVelocity;
-            playerCar.position.x = Math.max(playerXMin, Math.min(playerXMax, playerCar.position.x));
-
-            const moveDistance = playerSpeed;
-
-            roadChunks.forEach(chunk => {
-                chunk.position.z += moveDistance;
-                if(chunk.position.z > cameraCar.position.z + despawnDistance + roadChunkSize / 2) {
-                    chunk.position.z -= roadChunks.length * roadChunkSize;
-                }
-            });
-
-            otherCars.forEach((car, index) => {
-                const relativeSpeed = moveDistance - car.speed;
-                car.position.z += relativeSpeed;
-
-                if (car.position.z > cameraCar.position.z + despawnDistance) {
-                    sceneCar.remove(car);
-                    otherCars.splice(index, 1);
-                    spawnNewCar();
-                }
-            });
-
-            environmentObjects.forEach((obj, index) => {
-                obj.position.z += moveDistance;
-                if (obj.position.z > cameraCar.position.z + despawnDistance) {
-                    sceneCar.remove(obj);
-                    environmentObjects.splice(index, 1);
-                    spawnNewEnvironmentObject();
-                }
-            });
-
-            checkCollisions();
-
-            score += moveDistance * 10;
-            scoreElement.innerText = Math.floor(score);
-        }
-
-        function checkCollisions() {
-            const playerBox = new THREE.Box3().setFromObject(playerCar);
-            otherCars.forEach(car => {
-                const carBox = new THREE.Box3().setFromObject(car);
-                if (playerBox.intersectsBox(carBox)) {
-                    gameRunning = false;
-                    gameOverText.style.display = 'block';
-                }
-            });
-        }
-
-        function onResizeCar() {
-            cameraCar.aspect = gameContainerCar.clientWidth / gameContainerCar.clientHeight;
-            cameraCar.updateProjectionMatrix();
-            rendererCar.setSize(gameContainerCar.clientWidth, gameContainerCar.clientHeight);
-        }
-
-        function toggleFullscreenCar() {
-            if (!document.fullscreenElement) {
-                gameContainerCar.requestFullscreen().catch(err => {
-                    alert(`Tam ekran moduna geçilemedi: ${err.message}`);
+        joinButton.addEventListener('click', () => {
+            username = usernameInput.value.trim();
+            room = roomSelect.value;
+            if (username && room) {
+                joinContainer.classList.add('hidden');
+                chatContainerInner.classList.remove('hidden');
+                currentRoomDisplay.textContent = room;
+                
+                // Pusher'a bağlanma ve kanala abone olma
+                // *** BU BİLGİLERİ KENDİ ANAHTARLARINIZLA DEĞİŞTİRİN ***
+                pusher = new Pusher('YOUR_APP_KEY', {
+                    cluster: 'YOUR_CLUSTER'
                 });
-            } else {
-                document.exitFullscreen();
-            }
-        }
 
-        function animateCarGame() {
-            if (gameRunning && !isPaused) {
-                requestAnimationFrame(animateCarGame);
-                updateCarGame();
-                rendererCar.render(sceneCar, cameraCar);
-            }
-        }
+                channel = pusher.subscribe('chat-' + room);
 
-        initCarGame();
-
-        // CS2 BENZERİ OYUN KODU BURADA
-        const gameContainerCS2 = document.getElementById('cs2-game-container');
-        const infoCS2 = document.getElementById('cs2-game-info');
-        const targetsLeftElement = document.getElementById('cs2-targets-left');
-        const scoreCS2Element = document.getElementById('cs2-score');
-        const gameStatusElement = document.getElementById('cs2-game-status');
-
-        const cs2Controls = document.getElementById('cs2-game-controls');
-        const moveJoystickContainer = document.getElementById('cs2-joystick-container');
-        const fireButton = document.getElementById('fire-button');
-        const jumpButton = document.getElementById('jump-button');
-        const lookPanel = document.getElementById('cs2-look-panel');
-
-        let sceneCS2, cameraCS2, rendererCS2;
-        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
-        let velocityCS2 = new THREE.Vector3();
-        let directionCS2 = new THREE.Vector3();
-        let canJump = false;
-        let targets = [];
-        let bullets = [];
-        let scoreCS2 = 0;
-        let targetCount = 10;
-
-        const playerHeight = 1.8;
-        const playerSpeedCS2 = 0.05;
-
-        // Joystick için değişkenler
-        let moveJoystickActive = false;
-        let moveJoystickCenter = { x: 0, y: 0 };
-        let moveJoystickPos = { x: 0, y: 0 };
-        const moveJoystickRadius = 75;
-
-        // Look Panel için değişkenler
-        let lookTouchIdentifier = null;
-        let prevTouchX = 0;
-        let prevTouchY = 0;
-        const lookSensitivity = 0.005;
-
-        function initCS2Game() {
-            sceneCS2 = new THREE.Scene();
-            sceneCS2.background = new THREE.Color(0x87ceeb);
-            sceneCS2.fog = new THREE.Fog(0x87ceeb, 0, 750);
-
-            cameraCS2 = new THREE.PerspectiveCamera(75, gameContainerCS2.clientWidth / gameContainerCS2.clientHeight, 0.1, 1000);
-            cameraCS2.position.y = playerHeight;
-
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-            sceneCS2.add(ambientLight);
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(10, 20, 10);
-            sceneCS2.add(directionalLight);
-
-            const groundGeometry = new THREE.PlaneGeometry(500, 500);
-            const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x808080 });
-            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-            ground.rotation.x = -Math.PI / 2;
-            ground.position.y = -0.1;
-            sceneCS2.add(ground);
-
-            rendererCS2 = new THREE.WebGLRenderer({ antialias: true });
-            rendererCS2.setSize(gameContainerCS2.clientWidth, gameContainerCS2.clientHeight);
-            rendererCS2.setPixelRatio(window.devicePixelRatio);
-            gameContainerCS2.appendChild(rendererCS2.domElement);
-
-            createWalls();
-            spawnTargets();
-
-            gameContainerCS2.addEventListener('mousedown', onMouseDownCS2, false);
-            gameContainerCS2.addEventListener('click', () => {
-                if (isMobileDevice()) {
-                    toggleFullscreenCS2();
-                } else {
-                    if (document.pointerLockElement !== rendererCS2.domElement) {
-                        rendererCS2.domElement.requestPointerLock();
-                        infoCS2.style.display = 'none';
-                        gameStatusElement.innerText = "Oyun başladı! Tüm hedefleri vur.";
-                        gameStatusElement.style.display = 'block';
+                // Kanaldan gelen mesajları dinle
+                channel.bind('message', function(data) {
+                    if (data.username !== username) { // Kendi mesajımızı tekrar göstermemek için
+                        displayMessage(data.username, data.text);
                     }
-                }
-            });
-
-            document.addEventListener('keydown', onKeyDownCS2, false);
-            document.addEventListener('keyup', onKeyUpCS2, false);
-            document.addEventListener('pointerlockchange', onPointerlockChange, false);
-
-            if (isMobileDevice()) {
-                infoCS2.style.display = 'none';
-                cs2Controls.style.display = 'flex';
-                lookPanel.addEventListener('touchstart', onLookStart, false);
-                lookPanel.addEventListener('touchmove', onLookMove, false);
-                lookPanel.addEventListener('touchend', onLookEnd, false);
-            } else {
-                infoCS2.style.display = 'block';
-                cs2Controls.style.display = 'none';
-                lookPanel.style.display = 'none';
-            }
-
-            moveJoystickContainer.addEventListener('touchstart', onMoveJoystickStart, false);
-            moveJoystickContainer.addEventListener('touchmove', onMoveJoystickMove, false);
-            moveJoystickContainer.addEventListener('touchend', onMoveJoystickEnd, false);
-
-            fireButton.addEventListener('touchstart', (e) => { e.preventDefault(); onFireCS2(); });
-            jumpButton.addEventListener('touchstart', () => {
-                if(canJump) velocityCS2.y = 10;
-                canJump = false;
-            });
-
-            window.addEventListener('resize', onResizeCS2);
-            window.addEventListener('orientationchange', onOrientationChange);
-
-            animateCS2();
-        }
-
-        function isMobileDevice() {
-            return (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
-        }
-
-        function onPointerlockChange() {
-            if (document.pointerLockElement === rendererCS2.domElement) {
-                document.addEventListener('mousemove', onMouseMoveCS2, false);
-                infoCS2.style.display = 'none';
-                gameStatusElement.innerText = "Oyun başladı! Tüm hedefleri vur.";
-                gameStatusElement.style.display = 'block';
-            } else {
-                document.removeEventListener('mousemove', onMouseMoveCS2, false);
-                infoCS2.style.display = 'block';
-                gameStatusElement.style.display = 'none';
-            }
-        }
-
-        function toggleFullscreenCS2() {
-            if (!document.fullscreenElement) {
-                gameContainerCS2.requestFullscreen().catch(err => {
-                    console.log(`Tam ekran moduna geçilemedi: ${err.message}`);
                 });
-                screen.orientation.lock('landscape').catch(err => {
-                    console.log(`Yatay moda geçilemedi: ${err.message}`);
-                });
+
+                // Odaya katıldığımızı diğer kullanıcılara bildir
+                displayMessage('Sistem', `${username} sohbete katıldı.`);
+
             } else {
-                document.exitFullscreen();
-                screen.orientation.unlock();
+                alert('Lütfen kullanıcı adı ve oda seçin.');
             }
-        }
+        });
 
-        function onOrientationChange() {
-             if (window.orientation === 90 || window.orientation === -90) {
-                if (isMobileDevice()) {
-                    toggleFullscreenCS2();
-                }
-            }
-        }
-
-        function onResizeCS2() {
-            cameraCS2.aspect = gameContainerCS2.clientWidth / gameContainerCS2.clientHeight;
-            cameraCS2.updateProjectionMatrix();
-            rendererCS2.setSize(gameContainerCS2.clientWidth, gameContainerCS2.clientHeight);
-        }
-
-        function createWalls() {
-            const wallMaterial = new THREE.MeshLambertMaterial({ color: 0xcccccc });
-            const walls = [
-                new THREE.Mesh(new THREE.BoxGeometry(20, 5, 1), wallMaterial),
-                new THREE.Mesh(new THREE.BoxGeometry(1, 5, 20), wallMaterial),
-                new THREE.Mesh(new THREE.BoxGeometry(30, 5, 1), wallMaterial),
-                new THREE.Mesh(new THREE.BoxGeometry(1, 5, 15), wallMaterial)
-            ];
-            walls[0].position.set(0, 2.5, -20);
-            walls[1].position.set(15, 2.5, 0);
-            walls[2].position.set(-10, 2.5, 20);
-            walls[3].position.set(-20, 2.5, 0);
-
-            walls.forEach(wall => sceneCS2.add(wall));
-        }
-
-        function spawnTargets() {
-            targets.forEach(target => sceneCS2.remove(target));
-            targets = [];
-            for (let i = 0; i < targetCount; i++) {
-                const targetGeometry = new THREE.BoxGeometry(1, 1, 1);
-                const targetMaterial = new THREE.MeshLambertMaterial({ color: 0xe74c3c });
-                const targetMesh = new THREE.Mesh(targetGeometry, targetMaterial);
-
-                const x = (Math.random() - 0.5) * 40;
-                const z = (Math.random() - 0.5) * 40;
-                const y = Math.random() * 3 + 1;
-
-                targetMesh.position.set(x, y, z);
-                sceneCS2.add(targetMesh);
-                targets.push(targetMesh);
-            }
-            targetsLeftElement.innerText = targets.length;
-        }
-
-        function onKeyDownCS2(event) {
-            switch (event.code) {
-                case 'KeyW': moveForward = true; break;
-                case 'KeyA': moveLeft = true; break;
-                case 'KeyS': moveBackward = true; break;
-                case 'KeyD': moveRight = true; break;
-                case 'Space':
-                    if (canJump) velocityCS2.y = 10;
-                    canJump = false;
-                    break;
-                case 'Escape':
-                    if (document.fullscreenElement) {
-                        document.exitFullscreen();
-                        screen.orientation.unlock();
-                    }
-                    break;
-            }
-        }
-
-        function onKeyUpCS2(event) {
-            switch (event.code) {
-                case 'KeyW': moveForward = false; break;
-                case 'KeyA': moveLeft = false; break;
-                case 'KeyS': moveBackward = false; break;
-                case 'KeyD': moveRight = false; break;
-            }
-        }
-
-        function onMouseMoveCS2(event) {
-            if (document.pointerLockElement === rendererCS2.domElement) {
-                const movementX = event.movementX || 0;
-                const movementY = event.movementY || 0;
-
-                cameraCS2.rotation.y -= movementX * lookSensitivity;
-                const newRotationX = cameraCS2.rotation.x - movementY * lookSensitivity;
-                cameraCS2.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, newRotationX));
-            }
-        }
-
-        function onMouseDownCS2(event) {
-            if (document.pointerLockElement === rendererCS2.domElement) {
-                if (event.button === 0) {
-                    onFireCS2();
-                }
-            }
-        }
-
-        function onFireCS2() {
-            const bulletGeometry = new THREE.SphereGeometry(0.1, 8, 8);
-            const bulletMaterial = new THREE.MeshBasicMaterial({ color: 0xcccccc });
-            const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
-
-            bullet.position.copy(cameraCS2.position);
-            const direction = new THREE.Vector3();
-            cameraCS2.getWorldDirection(direction);
-
-            bullet.velocity = direction.multiplyScalar(50);
-            sceneCS2.add(bullet);
-            bullets.push(bullet);
-        }
-
-        function updateBullets() {
-            for(let i = bullets.length - 1; i >= 0; i--) {
-                const bullet = bullets[i];
-                bullet.position.add(bullet.velocity.clone().multiplyScalar(0.016));
-
-                if (bullet.position.distanceTo(cameraCS2.position) > 100) {
-                    sceneCS2.remove(bullet);
-                    bullets.splice(i, 1);
-                    continue;
-                }
-
-                const bulletBox = new THREE.Box3().setFromObject(bullet);
-                let hitTarget = false;
-
-                for(let j = targets.length - 1; j >= 0; j--) {
-                    const target = targets[j];
-                    const targetBox = new THREE.Box3().setFromObject(target);
-
-                    if (bulletBox.intersectsBox(targetBox)) {
-                        sceneCS2.remove(target);
-                        targets.splice(j, 1);
-
-                        scoreCS2 += 100;
-                        scoreCS2Element.innerText = scoreCS2;
-                        targetsLeftElement.innerText = targets.length;
-
-                        sceneCS2.remove(bullet);
-                        bullets.splice(i, 1);
-
-                        hitTarget = true;
-                        break;
-                    }
-                }
-
-                if (targets.length === 0) {
-                    gameStatusElement.innerText = "Tebrikler! Tüm hedefleri vurdun. Yeni bir oyun için sayfayı yenile.";
-                    gameStatusElement.style.color = 'green';
-                }
-            }
-        }
-
-        function onMoveJoystickStart(e) {
+        chatForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const touch = e.changedTouches[0];
-            const rect = moveJoystickContainer.getBoundingClientRect();
-            moveJoystickActive = touch.clientX >= rect.left && touch.clientX <= rect.right && touch.clientY >= rect.top && touch.clientY <= rect.bottom;
-
-            if (moveJoystickActive) {
-                moveJoystickCenter = {
-                    x: rect.left + rect.width / 2,
-                    y: rect.top + rect.height / 2
-                };
-                onMoveJoystickMove(e);
+            const messageText = chatInput.value;
+            if (messageText) {
+                // Mesajı gönderme (API çağrısı ile Pusher'a iletme)
+                // Bu örnek basitlik için mesajı direkt gönderiyor, 
+                // ancak gerçek bir uygulamada bir API'ye gönderilir.
+                // Biz burada kendi mesajımızı da hemen gösterelim.
+                displayMessage(username, messageText);
+                
+                // Mesajı Pusher'a göndermek için bir API çağrısı gerekiyor.
+                // Bu örnek için basit bir JSON gönderimi yapacağız.
+                fetch('https://chat-api.example.com/send-message', { // Bu adres sadece bir örnektir
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: username,
+                        room: room,
+                        text: messageText
+                    })
+                }).then(response => console.log('Mesaj gönderildi:', response));
+                
+                chatInput.value = '';
             }
+        });
+
+        function displayMessage(sender, text) {
+            const item = document.createElement('div');
+            item.classList.add('chat-message');
+            const usernameSpan = document.createElement('span');
+            usernameSpan.classList.add('username-span');
+            usernameSpan.textContent = sender + ': ';
+            
+            const messageTextNode = document.createTextNode(text);
+            
+            item.appendChild(usernameSpan);
+            item.appendChild(messageTextNode);
+            
+            chatMessages.appendChild(item);
+            chatMessages.scrollTop = chatMessages.scrollHeight; // Sohbeti en alta kaydır
         }
-
-        function onMoveJoystickMove(e) {
-            if (!moveJoystickActive) return;
-            e.preventDefault();
-            const touch = Array.from(e.changedTouches).find(t => {
-                const rect = moveJoystickContainer.getBoundingClientRect();
-                return t.clientX >= rect.left && t.clientX <= rect.right && t.clientY >= rect.top && t.clientY <= rect.bottom;
-            });
-            if (!touch) return;
-
-            let dx = touch.clientX - moveJoystickCenter.x;
-            let dy = touch.clientY - moveJoystickCenter.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-
-            if (distance > moveJoystickRadius) {
-                const angle = Math.atan2(dy, dx);
-                dx = Math.cos(angle) * moveJoystickRadius;
-                dy = Math.sin(angle) * moveJoystickRadius;
-            }
-
-            document.getElementById('cs2-joystick-knob').style.transform = `translate(-50%, -50%) translate(${dx}px, ${dy}px)`;
-
-            moveJoystickPos = { x: dx / moveJoystickRadius, y: -dy / moveJoystickRadius };
-        }
-
-        function onMoveJoystickEnd(e) {
-            if (!moveJoystickActive) return;
-            moveJoystickActive = false;
-            document.getElementById('cs2-joystick-knob').style.transform = 'translate(-50%, -50%)';
-            moveJoystickPos = { x: 0, y: 0 };
-        }
-
-        function onLookStart(e) {
-            e.preventDefault();
-            const touch = e.changedTouches[0];
-            lookTouchIdentifier = touch.identifier;
-            prevTouchX = touch.clientX;
-            prevTouchY = touch.clientY;
-        }
-
-        function onLookMove(e) {
-            if (lookTouchIdentifier === null) return;
-            e.preventDefault();
-            const touch = Array.from(e.changedTouches).find(t => t.identifier === lookTouchIdentifier);
-            if (!touch) return;
-
-            const dx = touch.clientX - prevTouchX;
-            const dy = touch.clientY - prevTouchY;
-
-            cameraCS2.rotation.y -= dx * lookSensitivity;
-            const newRotationX = cameraCS2.rotation.x - dy * lookSensitivity;
-            cameraCS2.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, newRotationX));
-
-            prevTouchX = touch.clientX;
-            prevTouchY = touch.clientY;
-        }
-
-        function onLookEnd(e) {
-            if (lookTouchIdentifier === null) return;
-            e.preventDefault();
-            lookTouchIdentifier = null;
-        }
-
-        function animateCS2() {
-            requestAnimationFrame(animateCS2);
-
-            const delta = 0.016;
-
-            velocityCS2.y -= 9.8 * 2.0 * delta;
-
-            if (isMobileDevice()) {
-                directionCS2.z = moveJoystickPos.y; // Hata düzeltildi: İleri-geri hareketi artık doğru yönde
-                directionCS2.x = moveJoystickPos.x;
-            } else {
-                directionCS2.z = Number(moveForward) - Number(moveBackward);
-                directionCS2.x = Number(moveRight) - Number(moveLeft);
-            }
-
-            if (directionCS2.length() > 0) {
-                directionCS2.normalize();
-            }
-
-            const forwardVector = new THREE.Vector3();
-            cameraCS2.getWorldDirection(forwardVector);
-            forwardVector.y = 0;
-            forwardVector.normalize();
-
-            const rightVector = new THREE.Vector3();
-            rightVector.crossVectors(cameraCS2.up, forwardVector);
-            rightVector.normalize();
-
-            const movement = new THREE.Vector3();
-            movement.add(forwardVector.multiplyScalar(directionCS2.z * playerSpeedCS2 * 60 * delta));
-            movement.add(rightVector.multiplyScalar(directionCS2.x * playerSpeedCS2 * 60 * delta));
-
-            cameraCS2.position.add(movement);
-            cameraCS2.position.y += velocityCS2.y * delta;
-
-            if (cameraCS2.position.y <= playerHeight) {
-                velocityCS2.y = 0;
-                cameraCS2.position.y = playerHeight;
-                canJump = true;
-            }
-
-            updateBullets();
-            rendererCS2.render(sceneCS2, cameraCS2);
-        }
-
-        initCS2Game();
     </script>
 </body>
 </html>
