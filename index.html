@@ -477,8 +477,8 @@
 
         const cs2Controls = document.getElementById('cs2-game-controls');
         const moveJoystickContainer = document.getElementById('cs2-joystick-container');
-        const fireButton = document.getElementById('cs2-fire-button');
-        const jumpButton = document.getElementById('cs2-jump-button');
+        const fireButton = document.getElementById('fire-button');
+        const jumpButton = document.getElementById('jump-button');
         const lookPanel = document.getElementById('cs2-look-panel');
 
         let sceneCS2, cameraCS2, rendererCS2;
@@ -799,7 +799,7 @@
 
             document.getElementById('cs2-joystick-knob').style.transform = `translate(-50%, -50%) translate(${dx}px, ${dy}px)`;
 
-            moveJoystickPos = { x: dx / moveJoystickRadius, y: dy / moveJoystickRadius };
+            moveJoystickPos = { x: dx / moveJoystickRadius, y: -dy / moveJoystickRadius };
         }
 
         function onMoveJoystickEnd(e) {
