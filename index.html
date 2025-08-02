@@ -675,9 +675,10 @@
             } else {
                 car = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 1), new THREE.MeshLambertMaterial({ color: Math.random() * 0xffffff }));
             }
-            const laneIndex = (Math.floor(Math.random() * 6) - 2.5) * 1.4; // 6 şerit
+            const laneIndex = (Math.floor(Math.random() * 6) - 2.5) * 1.4;
             const zPosition = camera.position.z - spawnDistance - Math.random() * 50;
             car.position.set(laneIndex, 0.25, zPosition);
+            car.speed = (Math.random() * 0.1) + 0.1; // Rastgele hız
             scene.add(car);
             otherCars.push(car);
         }
@@ -690,10 +691,10 @@
         
         function spawnNewEnvironmentObject() {
             let obj;
-            if (Math.random() > 0.9) { // Rastgele bir reklam panosu oluştur
+            if (Math.random() > 0.9) {
                 obj = createBillboard();
                 obj.position.x = (Math.random() > 0.5 ? 1 : -1) * (roadWidth / 2 + 3);
-            } else { // Ağaç oluştur
+            } else {
                 obj = createTree();
                 obj.position.x = (Math.random() > 0.5 ? 1 : -1) * (roadWidth / 2 + 1 + Math.random() * 5);
             }
@@ -714,6 +715,7 @@
             
             otherCars.forEach(car => {
                 car.position.z = camera.position.z - spawnDistance - Math.random() * 50;
+                car.speed = (Math.random() * 0.1) + 0.1;
             });
 
             environmentObjects.forEach(obj => {
@@ -811,7 +813,9 @@
 
             // Araba ve çevre objelerini dinamik olarak yönetme
             otherCars.forEach((car, index) => {
-                car.position.z += moveDistance;
+                const relativeSpeed = moveDistance - car.speed;
+                car.position.z += relativeSpeed;
+
                 if (car.position.z > camera.position.z + despawnDistance) {
                     scene.remove(car);
                     otherCars.splice(index, 1);
