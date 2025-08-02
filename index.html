@@ -356,7 +356,7 @@
         
         let scene, camera, renderer, playerCar, road, gameRunning = false, score = 0;
         const otherCars = [];
-        let carSpeed = 0.05;
+        let playerSpeed = 0.05; // Oyuncu araba hızı
         let spawnInterval = 1000;
         let lastSpawnTime = 0;
 
@@ -385,20 +385,24 @@
             gameContainer.appendChild(renderer.domElement);
 
             // Yol
-            const roadGeometry = new THREE.BoxGeometry(3.2, 0.1, 100);
+            const roadGeometry = new THREE.BoxGeometry(3.2, 0.1, 1000); // Yolun uzunluğunu artırdık
             const roadMaterial = new THREE.MeshLambertMaterial({ color: 0x4a6566 });
             road = new THREE.Mesh(roadGeometry, roadMaterial);
-            road.position.z = -50;
+            road.position.z = -500; // Yolun başlangıcını geriye çektik
             scene.add(road);
 
             // Yol şeritleri
-            for (let i = -50; i < 50; i += 2) {
+            // Bu kısımda şeritlerin hareketini sağlamak için onları bir diziye ekleyip güncelleyeceğiz.
+            const roadLines = [];
+            for (let i = -500; i < 500; i += 2) {
                 const lineGeometry = new THREE.BoxGeometry(0.1, 0.1, 1);
                 const lineMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
                 const line = new THREE.Mesh(lineGeometry, lineMaterial);
                 line.position.set(0, 0.06, i);
                 scene.add(line);
+                roadLines.push(line);
             }
+            window.roadLines = roadLines; // Global olarak erişebilmek için
 
             // Oyuncu araba
             const playerGeometry = new THREE.BoxGeometry(0.5, 0.5, 1);
@@ -411,17 +415,46 @@
             document.addEventListener('keydown', onKeyDown);
             window.addEventListener('resize', onResize);
             gameContainer.addEventListener('click', startGame);
+            
+            // Başlangıçta sabit engelleri oluşturalım
+            spawnInitialCars();
+        }
+
+        // Oyun başladığında sabit duran engelleri oluşturma
+        function spawnInitialCars() {
+            // Araba yaratma mantığı tamamen değişti. Sabit duran engeller oluşturacağız.
+            const carGeometry = new THREE.BoxGeometry(0.5, 0.5, 1);
+            const carMaterials = [
+                new THREE.MeshLambertMaterial({ color: 0xe74c3c }),
+                new THREE.MeshLambertMaterial({ color: 0x3498db }),
+                new THREE.MeshLambertMaterial({ color: 0xf1c40f }),
+            ];
+            
+            for (let i = 0; i < 20; i++) {
+                const car = new THREE.Mesh(carGeometry, carMaterials[Math.floor(Math.random() * carMaterials.length)]);
+                const lane = Math.floor(Math.random() * 3) - 1; // -1, 0, 1
+                const zPosition = -i * 10; // Her bir arabayı 10 birim arayla yerleştir
+                car.position.set(lane, 0.25, zPosition);
+                scene.add(car);
+                otherCars.push(car);
+            }
         }
 
         function startGame() {
             if (gameRunning) return;
             gameRunning = true;
             score = 0;
-            carSpeed = 0.05;
+            playerSpeed = 0.05;
             gameOverText.style.display = 'none';
             playerCar.position.x = 0;
-            otherCars.forEach(car => scene.remove(car));
-            otherCars.length = 0;
+            
+            // Yeniden başlamak için arabaların pozisyonunu resetle
+            otherCars.forEach((car, index) => {
+                const lane = Math.floor(Math.random() * 3) - 1;
+                const zPosition = -index * 10 - 20; // Yeni konumlarını ayarla
+                car.position.set(lane, 0.25, zPosition);
+            });
+            
             animate();
         }
 
@@ -435,53 +468,40 @@
             }
         }
 
-        function spawnCar() {
-            const carGeometry = new THREE.BoxGeometry(0.5, 0.5, 1);
-            const carMaterials = [
-                new THREE.MeshLambertMaterial({ color: 0xe74c3c }),
-                new THREE.MeshLambertMaterial({ color: 0x3498db }),
-                new THREE.MeshLambertMaterial({ color: 0xf1c40f }),
-            ];
-            const car = new THREE.Mesh(carGeometry, carMaterials[Math.floor(Math.random() * carMaterials.length)]);
-            
-            const lane = Math.floor(Math.random() * 3) - 1; // -1, 0, 1
-            car.position.set(lane, 0.25, -50);
-            scene.add(car);
-            otherCars.push(car);
-        }
-
         function update() {
             if (!gameRunning) return;
             
-            // Arabaların hızını artır
-            carSpeed += 0.00005;
-            // Yeni araba oluşturma aralığını kısalt
-            spawnInterval = Math.max(500, spawnInterval - 0.1);
-
-            // Diğer arabaları hareket ettir
-            otherCars.forEach(car => {
-                car.position.z += carSpeed;
-            });
+            // Oyuncu arabasını ileri hareket ettir
+            playerCar.position.z -= playerSpeed;
             
-            // Arabaları temizle
-            for (let i = otherCars.length - 1; i >= 0; i--) {
-                if (otherCars[i].position.z > camera.position.z + 1) {
-                    scene.remove(otherCars[i]);
-                    otherCars.splice(i, 1);
+            // Hızı artır
+            playerSpeed += 0.00001;
+
+            // Yol şeritlerini ve engelleri oyuncunun hareketine göre geri çek
+            road.position.z += playerSpeed;
+            if(road.position.z > 0) road.position.z = -500;
+            
+            window.roadLines.forEach(line => {
+                line.position.z += playerSpeed;
+                if(line.position.z > camera.position.z) {
+                    line.position.z -= 1000;
                 }
-            }
+            });
+
+            otherCars.forEach(car => {
+                car.position.z += playerSpeed;
+                // Arabalar kameranın arkasına geçtiğinde yenisi gibi konumlandır
+                if (car.position.z > camera.position.z) {
+                    const lane = Math.floor(Math.random() * 3) - 1;
+                    car.position.set(lane, 0.25, -200); // Yeniden uzakta bir konum belirle
+                }
+            });
 
             // Çarpışma kontrolü
             checkCollisions();
 
-            // Yeni araba oluştur
-            if (Date.now() - lastSpawnTime > spawnInterval) {
-                spawnCar();
-                lastSpawnTime = Date.now();
-            }
-
             // Puanı güncelle
-            score += 0.1;
+            score += playerSpeed * 10;
             scoreElement.innerText = Math.floor(score);
         }
 
@@ -504,9 +524,11 @@
         }
 
         function animate() {
-            requestAnimationFrame(animate);
-            update();
-            renderer.render(scene, camera);
+            if (gameRunning) {
+                requestAnimationFrame(animate);
+                update();
+                renderer.render(scene, camera);
+            }
         }
 
         init();
