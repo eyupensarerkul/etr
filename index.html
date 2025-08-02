@@ -261,6 +261,8 @@
             align-items: flex-end;
             pointer-events: none; /* Tuval üzerindeki tıklamaların game-controls'u değil, tuvali etkilemesini sağlar */
             z-index: 10;
+            padding: 0 10px;
+            box-sizing: border-box;
         }
 
         .game-controls .control-group {
@@ -269,10 +271,19 @@
             pointer-events: auto; /* Kontrol grupları tıklama olaylarını algılayabilir */
         }
         
-        .game-controls .move-controls,
+        .game-controls .move-controls {
+            display: flex;
+            flex-direction: row; /* Sol ve Sağ tuşları yan yana */
+            justify-content: flex-start; /* Sola yaslı */
+            gap: 10px;
+        }
+        
         .game-controls .speed-controls {
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            justify-content: flex-end; /* Sağa yaslı */
+            align-items: flex-end;
+            gap: 10px;
         }
 
         .control-button {
@@ -286,7 +297,6 @@
             justify-content: center;
             align-items: center;
             font-size: 24px;
-            margin: 5px;
             cursor: pointer;
             user-select: none; /* Seçimi engelleme */
             transition: background-color 0.3s ease, transform 0.1s ease;
@@ -454,9 +464,17 @@
         
         let playerSpeed = 0.1;
         let targetSpeed = 0.1;
-        const lateralSpeed = 0.05;
+        
+        // Akıcı hareket için yeni değişkenler
+        let lateralVelocity = 0; // Yatay hız
+        const lateralAcceleration = 0.005; // Yatay hızlanma
+        const lateralDeceleration = 0.02; // Yatay yavaşlama
+        const maxLateralSpeed = 0.05; // Maksimum yatay hız
 
-        let targetX = 0;
+        // 4 şeritli yol için yol genişliğini ayarlıyoruz
+        const roadWidth = 4.2;
+        const playerXMin = -(roadWidth / 2) + 0.5;
+        const playerXMax = (roadWidth / 2) - 0.5;
 
         const carModelUrl = 'https://threejs.org/examples/models/gltf/car.gltf';
         let playerCarModel, obstacleCarModel;
@@ -478,25 +496,29 @@
             directionalLight.position.set(0, 10, 5);
             scene.add(directionalLight);
 
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(gameContainer.clientWidth, gameContainer.clientHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            gameContainer.appendChild(renderer.domElement);
-
-            const roadGeometry = new THREE.BoxGeometry(3.2, 0.1, 1000);
+            // Yol geometrisini 4 şerit için genişletiyoruz
+            const roadGeometry = new THREE.BoxGeometry(roadWidth, 0.1, 1000);
             const roadMaterial = new THREE.MeshLambertMaterial({ color: 0x4a6566 });
             road = new THREE.Mesh(roadGeometry, roadMaterial);
             road.position.z = -500;
             scene.add(road);
 
+            // Yol şeritleri oluşturma (4 şerit için ayarlandı)
             const roadLines = [];
             for (let i = -500; i < 500; i += 2) {
+                // Şerit çizgileri için iki dikey çizgi kullanıyoruz
                 const lineGeometry = new THREE.BoxGeometry(0.1, 0.1, 1);
                 const lineMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff });
-                const line = new THREE.Mesh(lineGeometry, lineMaterial);
-                line.position.set(0, 0.06, i);
-                scene.add(line);
-                roadLines.push(line);
+                
+                const line1 = new THREE.Mesh(lineGeometry, lineMaterial);
+                line1.position.set(-0.7, 0.06, i);
+                scene.add(line1);
+                roadLines.push(line1);
+
+                const line2 = new THREE.Mesh(lineGeometry, lineMaterial);
+                line2.position.set(0.7, 0.06, i);
+                scene.add(line2);
+                roadLines.push(line2);
             }
             window.roadLines = roadLines;
 
@@ -518,16 +540,20 @@
             rightButton.addEventListener('touchend', (e) => { e.preventDefault(); onButtonRelease('right'); });
             gasButton.addEventListener('touchend', (e) => { e.preventDefault(); onButtonRelease('gas'); });
             brakeButton.addEventListener('touchend', (e) => { e.preventDefault(); onButtonRelease('brake'); });
-
-            leftButton.addEventListener('mousedown', (e) => onButtonPress('left'));
-            rightButton.addEventListener('mousedown', (e) => onButtonPress('right'));
-            gasButton.addEventListener('mousedown', (e) => onButtonPress('gas'));
-            brakeButton.addEventListener('mousedown', (e) => onButtonPress('brake'));
-
-            leftButton.addEventListener('mouseup', (e) => onButtonRelease('left'));
-            rightButton.addEventListener('mouseup', (e) => onButtonRelease('right'));
-            gasButton.addEventListener('mouseup', (e) => onButtonRelease('gas'));
-            brakeButton.addEventListener('mouseup', (e) => onButtonRelease('brake'));
+            
+            // Ekran üstü kontrol tuşları için mouse olay dinleyicileri
+            leftButton.addEventListener('mousedown', () => onButtonPress('left'));
+            leftButton.addEventListener('mouseup', () => onButtonRelease('left'));
+            leftButton.addEventListener('mouseout', () => onButtonRelease('left'));
+            rightButton.addEventListener('mousedown', () => onButtonPress('right'));
+            rightButton.addEventListener('mouseup', () => onButtonRelease('right'));
+            rightButton.addEventListener('mouseout', () => onButtonRelease('right'));
+            gasButton.addEventListener('mousedown', () => onButtonPress('gas'));
+            gasButton.addEventListener('mouseup', () => onButtonRelease('gas'));
+            gasButton.addEventListener('mouseout', () => onButtonRelease('gas'));
+            brakeButton.addEventListener('mousedown', () => onButtonPress('brake'));
+            brakeButton.addEventListener('mouseup', () => onButtonRelease('brake'));
+            brakeButton.addEventListener('mouseout', () => onButtonRelease('brake'));
 
             // Tam ekran butonu için olay dinleyicisi
             fullscreenButton.addEventListener('click', toggleFullscreen);
@@ -567,7 +593,7 @@
             gameOverText.style.display = 'none';
             
             otherCars.forEach(car => {
-                const lane = Math.floor(Math.random() * 3) - 1;
+                const lane = Math.floor(Math.random() * 4) - 1.5; // 4 şerit için rastgele konum
                 const zPosition = -Math.random() * 200 - 20;
                 car.position.set(lane, 0.25, zPosition);
             });
@@ -585,7 +611,7 @@
                 } else {
                     car = obstacleCarModel.clone();
                 }
-                const lane = Math.floor(Math.random() * 3) - 1;
+                const lane = Math.floor(Math.random() * 4) - 1.5; // 4 şerit için konumlandırma
                 const zPosition = -Math.random() * 200 - 20;
                 car.position.set(lane, 0.25, zPosition);
                 scene.add(car);
@@ -593,12 +619,13 @@
             }
         }
 
+        // Tuş basma olayları için
         function onKeyDown(event) {
             if (!gameRunning) return;
             if (event.key === 'ArrowLeft') {
-                targetX = Math.max(playerCar.position.x - 1, -1);
+                lateralVelocity = -maxLateralSpeed; // Sola doğru yatay hızlan
             } else if (event.key === 'ArrowRight') {
-                targetX = Math.min(playerCar.position.x + 1, 1);
+                lateralVelocity = maxLateralSpeed; // Sağa doğru yatay hızlan
             } else if (event.key === 'ArrowUp') {
                 targetSpeed = 0.2;
             } else if (event.key === 'ArrowDown') {
@@ -608,7 +635,9 @@
 
         function onKeyUp(event) {
             if (!gameRunning) return;
-            if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+            if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+                lateralVelocity = 0; // Tuş bırakılınca yatay hızı sıfırla
+            } else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
                 targetSpeed = 0.1;
             }
         }
@@ -617,9 +646,9 @@
         function onButtonPress(direction) {
             if (!gameRunning) return;
             if (direction === 'left') {
-                targetX = Math.max(playerCar.position.x - 1, -1);
+                lateralVelocity = -maxLateralSpeed;
             } else if (direction === 'right') {
-                targetX = Math.min(playerCar.position.x + 1, 1);
+                lateralVelocity = maxLateralSpeed;
             } else if (direction === 'gas') {
                 targetSpeed = 0.2;
             } else if (direction === 'brake') {
@@ -629,7 +658,9 @@
 
         function onButtonRelease(direction) {
             if (!gameRunning) return;
-            if (direction === 'gas' || direction === 'brake') {
+            if (direction === 'left' || direction === 'right') {
+                lateralVelocity = 0;
+            } else if (direction === 'gas' || direction === 'brake') {
                 targetSpeed = 0.1;
             }
         }
@@ -639,7 +670,10 @@
             
             playerSpeed += (targetSpeed - playerSpeed) * 0.05;
 
-            playerCar.position.x += (targetX - playerCar.position.x) * lateralSpeed;
+            // Yatay hızı kullanarak arabanın x pozisyonunu güncelle
+            playerCar.position.x += lateralVelocity;
+            // Yolun dışına çıkmasını engelle
+            playerCar.position.x = Math.max(playerXMin, Math.min(playerXMax, playerCar.position.x));
 
             const moveDistance = playerSpeed;
             
@@ -656,7 +690,7 @@
             otherCars.forEach(car => {
                 car.position.z += moveDistance;
                 if (car.position.z > camera.position.z + 10) {
-                    const lane = Math.floor(Math.random() * 3) - 1;
+                    const lane = Math.floor(Math.random() * 4) - 1.5;
                     const zPosition = -Math.random() * 200 - 20;
                     car.position.set(lane, 0.25, zPosition);
                 }
