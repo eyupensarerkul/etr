@@ -20,7 +20,7 @@
       const query = document.getElementById('userInput').value.trim();
       if (!query) return alert('Bir soru yaz lütfen!');
 
-      const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_redirect=1&skip_disambig=1`;
+      const url = `https://cors-anywhere.herokuapp.com/https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_redirect=1&skip_disambig=1`;
 
       document.getElementById('response').textContent = 'Cevap aranıyor...';
 
